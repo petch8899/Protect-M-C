@@ -103,6 +103,32 @@
   .toast.err { border-left-color: var(--red); }
   .loading-wrap { display:flex; align-items:center; justify-content:center; height: 60vh; width:100%; color: var(--lo); }
 
+  .nav-badge { margin-left:auto; font-family:'IBM Plex Mono'; font-size: 10px; font-weight:600; color:#1B1E21; background: var(--red); padding: 1px 6px; border-radius: 8px; }
+
+  .metric-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); padding: 16px 18px; position: relative; }
+  .metric-top { display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 4px; gap: 8px; }
+  .metric-label { color: var(--lo); font-size: 12px; }
+  .metric-status { font-size: 10px; padding: 1px 7px; border-radius: 2px; border: 1px solid; white-space:nowrap; }
+  .metric-value { font-family:'Barlow Condensed'; font-weight: 700; font-size: 30px; line-height:1; margin: 6px 0 10px; }
+  .metric-desc { color: var(--lo); font-size: 11px; margin-top: 8px; line-height: 1.5; }
+  .progress-track { height: 6px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 3px; overflow:hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; }
+  .metric-num-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+
+  .alert-section-title { font-family:'Barlow Condensed'; font-weight:600; font-size: 16px; margin: 24px 0 12px; display:flex; align-items:center; gap: 8px; }
+  .alert-section-title:first-child { margin-top: 0; }
+  .alert-list { display:flex; flex-direction:column; gap: 8px; margin-bottom: 6px; }
+  .alert-item { display:flex; align-items:center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--red); padding: 12px 16px; }
+  .alert-item.warn { border-left-color: var(--amber); }
+  .alert-item.ok { border-left-color: var(--teal); }
+  .alert-main { flex: 1; min-width: 0; }
+  .alert-title { font-weight: 500; font-size: 13.5px; }
+  .alert-sub { color: var(--lo); font-size: 11.5px; margin-top: 2px; }
+  .alert-days { font-family:'IBM Plex Mono'; font-size: 12px; white-space: nowrap; }
+  .alert-empty { color: var(--lo); font-size: 12.5px; padding: 14px 4px; }
+  .schedule-toggle { display:flex; justify-content:flex-end; margin-bottom: 14px; }
+
   @media (max-width: 880px) {
     .app { flex-direction: column; }
     .sidebar { width: 100%; flex-direction: row; overflow-x: auto; border-right:none; border-bottom:1px solid var(--border); }
@@ -111,6 +137,7 @@
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .chart-row, .chart-row2 { grid-template-columns: 1fr; }
     .form-grid { grid-template-columns: 1fr; }
+    .metric-grid, .metric-num-grid { grid-template-columns: 1fr; }
     .main { padding: 18px; }
   }
 </style>
@@ -148,10 +175,18 @@ const PRIORITY_META = {
 };
 
 const STORAGE_KEY = "maintlog_records_v1";
+const SCHEDULE_KEY = "maintlog_schedules_v1";
 const uid = () => Math.random().toString(36).slice(2, 10);
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const fmtTHB = (n) => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(n || 0);
 const fmtMonth = (iso) => new Date(iso).toLocaleDateString("th-TH", { month: "short", year: "2-digit" });
+const fmtDateTH = (iso) => new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+const daysBetween = (fromISO, toISO) => Math.round((new Date(toISO) - new Date(fromISO)) / (1000 * 60 * 60 * 24));
+const addDays = (iso, n) => {
+  const d = new Date(iso);
+  d.setDate(d.getDate() + Number(n));
+  return d.toISOString().slice(0, 10);
+};
 
 const SEED = [
   { id: uid(), equipment: "คอมเพรสเซอร์ #1", type: "preventive", date: "2026-06-12", technician: "สมชาย ใจดี", cost: 3500, downtime: 1.5, priority: "low", status: "completed", note: "เปลี่ยนไส้กรองอากาศ ตรวจแรงดัน" },
@@ -162,6 +197,12 @@ const SEED = [
   { id: uid(), equipment: "คอมเพรสเซอร์ #1", type: "preventive", date: "2026-08-01", technician: "วิชัย พรหมมา", cost: 3600, downtime: 1.5, priority: "low", status: "completed", note: "รอบตรวจประจำเดือน" },
   { id: uid(), equipment: "สายพานลำเลียง B", type: "emergency", date: "2026-08-14", technician: "ประยุทธ ศรีสุข", cost: 14500, downtime: 6, priority: "high", status: "overdue", note: "มอเตอร์ไหม้ ต้องสั่งอะไหล่ด่วน" },
   { id: uid(), equipment: "เครื่อง CNC #1", type: "corrective", date: "2026-08-20", technician: "สมชาย ใจดี", cost: 6700, downtime: 2.5, priority: "medium", status: "completed", note: "ปรับตั้งแกน spindle" },
+];
+
+const SEED_SCHEDULES = [
+  { id: uid(), equipment: "คอมเพรสเซอร์ #1", nextDate: "2026-09-05", intervalDays: 30, note: "ตรวจสอบระบบอัดอากาศและเปลี่ยนไส้กรองประจำเดือน" },
+  { id: uid(), equipment: "หม้อแปลงไฟฟ้า", nextDate: "2026-09-01", intervalDays: 90, note: "ตรวจสภาพฉนวนและขดลวดหลังซ่อมฉุกเฉิน" },
+  { id: uid(), equipment: "สายพานลำเลียง B", nextDate: "2026-08-29", intervalDays: 14, note: "ติดตามผลการเปลี่ยนมอเตอร์ใหม่" },
 ];
 
 function Bracket({ children, className = "" }) {
@@ -202,8 +243,25 @@ function saveRecords(records) {
   }
 }
 
+function loadSchedules() {
+  try {
+    const raw = localStorage.getItem(SCHEDULE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return SEED_SCHEDULES;
+}
+function saveSchedules(schedules) {
+  try {
+    localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedules));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function App() {
   const [records, setRecords] = useState(null);
+  const [schedules, setSchedules] = useState(null);
   const [tab, setTab] = useState("dashboard");
   const [query, setQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -211,7 +269,7 @@ function App() {
   const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => { setRecords(loadRecords()); }, []);
+  useEffect(() => { setRecords(loadRecords()); setSchedules(loadSchedules()); }, []);
 
   const showToast = (msg, isError = false) => {
     setToast({ msg, isError });
@@ -223,6 +281,45 @@ function App() {
     const ok = saveRecords(next);
     if (!ok) showToast("บันทึกไม่สำเร็จ พื้นที่จัดเก็บอาจเต็ม", true);
   }, []);
+
+  const persistSchedules = useCallback((next) => {
+    setSchedules(next);
+    const ok = saveSchedules(next);
+    if (!ok) showToast("บันทึกไม่สำเร็จ พื้นที่จัดเก็บอาจเต็ม", true);
+  }, []);
+
+  const saveSchedule = (sc) => {
+    if (!schedules) return;
+    let next;
+    if (sc.id && schedules.some((s) => s.id === sc.id)) {
+      next = schedules.map((s) => (s.id === sc.id ? sc : s));
+      showToast("แก้ไขการแจ้งเตือนแล้ว");
+    } else {
+      next = [{ ...sc, id: uid() }, ...schedules];
+      showToast("ตั้งการแจ้งเตือนใหม่แล้ว");
+    }
+    persistSchedules(next);
+  };
+
+  const deleteSchedule = (id) => {
+    if (!schedules) return;
+    persistSchedules(schedules.filter((s) => s.id !== id));
+    showToast("ลบการแจ้งเตือนแล้ว");
+  };
+
+  const completeSchedule = (sc) => {
+    if (!schedules) return;
+    if (sc.intervalDays && Number(sc.intervalDays) > 0) {
+      const next = schedules.map((s) =>
+        s.id === sc.id ? { ...s, nextDate: addDays(todayISO(), Number(sc.intervalDays)) } : s
+      );
+      persistSchedules(next);
+      showToast("เลื่อนรอบแจ้งเตือนถัดไปแล้ว");
+    } else {
+      persistSchedules(schedules.filter((s) => s.id !== sc.id));
+      showToast("ทำเครื่องหมายเสร็จสิ้นแล้ว");
+    }
+  };
 
   const saveRecord = (rec) => {
     if (!records) return;
@@ -291,8 +388,58 @@ function App() {
       name: STATUS_META[s].label, value: records.filter((r) => r.status === s).length, color: STATUS_META[s].color,
     })).filter((d) => d.value > 0);
 
-    return { totalCost, totalDowntime, overdue, emergency, trend, byType, byEquip, byStatus, count: records.length };
+    // ---- KPI / performance metrics ----
+    const total = records.length;
+    const completed = records.filter((r) => r.status === "completed").length;
+    const preventiveCount = records.filter((r) => r.type === "preventive").length;
+
+    const pmRatioPct = total ? (preventiveCount / total) * 100 : 0;
+    const emergencyRatePct = total ? (emergency / total) * 100 : 0;
+    const onTimeRatePct = total ? (completed / total) * 100 : 0;
+    const overdueRatePct = total ? (overdue / total) * 100 : 0;
+    const mttrHours = total ? totalDowntime / total : 0;
+    const avgCostPerJob = total ? totalCost / total : 0;
+
+    const sortedDates = records.map((r) => r.date).sort();
+    const periodDays = Math.max(1, daysBetween(sortedDates[0], sortedDates[sortedDates.length - 1]) + 1);
+    const equipCount = Object.keys(byEquipMap).length || 1;
+    const totalPossibleHours = periodDays * 24 * equipCount;
+    const availabilityPct = totalPossibleHours > 0
+      ? Math.max(0, Math.min(100, ((totalPossibleHours - totalDowntime) / totalPossibleHours) * 100))
+      : 100;
+
+    const failureDatesByEquip = {};
+    records.forEach((r) => {
+      if (r.type === "corrective" || r.type === "emergency") {
+        failureDatesByEquip[r.equipment] = failureDatesByEquip[r.equipment] || [];
+        failureDatesByEquip[r.equipment].push(r.date);
+      }
+    });
+    const mtbfSamples = [];
+    Object.values(failureDatesByEquip).forEach((arr) => {
+      if (arr.length >= 2) {
+        const sorted = arr.slice().sort();
+        for (let i = 1; i < sorted.length; i++) mtbfSamples.push(daysBetween(sorted[i - 1], sorted[i]));
+      }
+    });
+    const mtbfDays = mtbfSamples.length ? mtbfSamples.reduce((a, b) => a + b, 0) / mtbfSamples.length : null;
+
+    const kpi = { pmRatioPct, emergencyRatePct, onTimeRatePct, overdueRatePct, mttrHours, avgCostPerJob, availabilityPct, mtbfDays, periodDays };
+
+    return { totalCost, totalDowntime, overdue, emergency, trend, byType, byEquip, byStatus, count: records.length, kpi };
   }, [records]);
+
+  const alerts = useMemo(() => {
+    if (!records) return null;
+    const today = todayISO();
+    const overdueRecords = records.filter((r) => r.status === "overdue").sort((a, b) => (a.date < b.date ? -1 : 1));
+    const withDays = (schedules || []).map((s) => ({ ...s, daysLeft: daysBetween(today, s.nextDate) }));
+    const overdueSchedules = withDays.filter((s) => s.daysLeft < 0).sort((a, b) => a.daysLeft - b.daysLeft);
+    const dueSoonSchedules = withDays.filter((s) => s.daysLeft >= 0 && s.daysLeft <= 7).sort((a, b) => a.daysLeft - b.daysLeft);
+    const upcomingSchedules = withDays.filter((s) => s.daysLeft > 7).sort((a, b) => a.daysLeft - b.daysLeft);
+    const badgeCount = overdueRecords.length + overdueSchedules.length + dueSoonSchedules.length;
+    return { overdueRecords, overdueSchedules, dueSoonSchedules, upcomingSchedules, badgeCount };
+  }, [records, schedules]);
 
   return (
     <div className="app">
@@ -301,12 +448,19 @@ function App() {
           <div className="brand-mark"><span className="brand-dot" /><span className="brand-title">MAINTLOG</span></div>
           <div className="brand-sub">ระบบบันทึกการซ่อมบำรุง</div>
         </div>
-        {[["dashboard", "ภาพรวมและวิเคราะห์ข้อมูล"], ["records", "รายการซ่อมบำรุง"], ["new", "บันทึกรายการใหม่"]].map(([key, label]) => (
+        {[
+          ["dashboard", "ภาพรวมและวิเคราะห์ข้อมูล"],
+          ["kpi", "ตัวชี้วัดประสิทธิภาพ"],
+          ["alerts", "แจ้งเตือนซ่อมบำรุง"],
+          ["records", "รายการซ่อมบำรุง"],
+          ["new", "บันทึกรายการใหม่"],
+        ].map(([key, label]) => (
           <div key={key} className={`nav-item ${tab === key ? "active" : ""}`}
                onClick={() => { setTab(key); if (key === "new") setEditing({}); }}>
             <span className="nav-ico" />
             <span>{label}</span>
-            {key !== "new" && <span className="nav-count">{records ? records.length : "–"}</span>}
+            {key === "records" && <span className="nav-count">{records ? records.length : "–"}</span>}
+            {key === "alerts" && alerts && alerts.badgeCount > 0 && <span className="nav-badge">{alerts.badgeCount}</span>}
           </div>
         ))}
         <div className="sidebar-foot">ข้อมูลจัดเก็บในเบราว์เซอร์นี้เท่านั้น<br />(localStorage ของเครื่อง)</div>
@@ -317,6 +471,17 @@ function App() {
           <div className="loading-wrap">กำลังโหลดข้อมูล…</div>
         ) : tab === "dashboard" ? (
           <Dashboard stats={stats} onNew={() => { setEditing({}); setTab("new"); }} />
+        ) : tab === "kpi" ? (
+          <KpiPage stats={stats} />
+        ) : tab === "alerts" ? (
+          <AlertsPage
+            alerts={alerts}
+            records={records}
+            onCompleteSchedule={completeSchedule}
+            onDeleteSchedule={deleteSchedule}
+            onSaveSchedule={saveSchedule}
+            onGoToRecord={(r) => { setEditing(r); setTab("new"); }}
+          />
         ) : tab === "records" ? (
           <Records
             filtered={filtered} query={query} setQuery={setQuery}
@@ -425,6 +590,249 @@ function Dashboard({ stats, onNew }) {
           </ResponsiveContainer>
         </div>
       </div>
+    </div>
+  );
+}
+
+function metricColor(value, good, warn, invert) {
+  if (invert) {
+    if (value <= good) return COLORS.teal;
+    if (value <= warn) return COLORS.amber;
+    return COLORS.red;
+  }
+  if (value >= good) return COLORS.teal;
+  if (value >= warn) return COLORS.amber;
+  return COLORS.red;
+}
+function metricStatusLabel(color) {
+  if (color === COLORS.teal) return "ดี";
+  if (color === COLORS.amber) return "เฝ้าระวัง";
+  return "ต้องปรับปรุง";
+}
+
+function MetricCard({ label, valueText, pct, color, desc }) {
+  return (
+    <div className="metric-card">
+      <div className="metric-top">
+        <div className="metric-label">{label}</div>
+        <span className="metric-status" style={{ color, borderColor: color + "55", background: color + "14" }}>{metricStatusLabel(color)}</span>
+      </div>
+      <div className="metric-value" style={{ color }}>{valueText}</div>
+      <div className="progress-track"><div className="progress-fill" style={{ width: `${Math.max(2, Math.min(100, pct))}%`, background: color }} /></div>
+      <div className="metric-desc">{desc}</div>
+    </div>
+  );
+}
+
+function KpiPage({ stats }) {
+  if (!stats) {
+    return (
+      <div className="empty">
+        <div className="headline">ยังไม่มีข้อมูล</div>
+        <div>บันทึกรายการซ่อมบำรุงเพื่อคำนวณตัวชี้วัดประสิทธิภาพ</div>
+      </div>
+    );
+  }
+  const k = stats.kpi;
+  const availColor = metricColor(k.availabilityPct, 95, 85);
+  const pmColor = metricColor(k.pmRatioPct, 60, 40);
+  const onTimeColor = metricColor(k.onTimeRatePct, 90, 70);
+  const emergColor = metricColor(k.emergencyRatePct, 10, 25, true);
+  const overdueColor = metricColor(k.overdueRatePct, 5, 15, true);
+
+  return (
+    <div>
+      <div className="page-head">
+        <div>
+          <div className="page-title">ตัวชี้วัดประสิทธิภาพ</div>
+          <div className="page-desc">คำนวณจากข้อมูล {stats.count} รายการ ครอบคลุมช่วงเวลา {k.periodDays} วัน</div>
+        </div>
+      </div>
+
+      <div className="metric-grid">
+        <MetricCard label="อัตราความพร้อมใช้งาน (Availability)" valueText={`${k.availabilityPct.toFixed(1)}%`} pct={k.availabilityPct} color={availColor}
+          desc="สัดส่วนเวลาที่เครื่องจักรพร้อมทำงาน เทียบกับเวลาหยุดเครื่องรวมจากการซ่อมบำรุงทั้งหมด" />
+        <MetricCard label="สัดส่วนงานป้องกันเชิงรุก (PM Ratio)" valueText={`${k.pmRatioPct.toFixed(1)}%`} pct={k.pmRatioPct} color={pmColor}
+          desc="สัดส่วนงานซ่อมบำรุงเชิงป้องกัน เทียบกับงานซ่อมทั้งหมด ยิ่งสูงยิ่งแสดงถึงการวางแผนที่ดี" />
+        <MetricCard label="อัตราซ่อมสำเร็จ (Completion Rate)" valueText={`${k.onTimeRatePct.toFixed(1)}%`} pct={k.onTimeRatePct} color={onTimeColor}
+          desc="สัดส่วนงานที่ดำเนินการเสร็จสิ้น เทียบกับงานทั้งหมดที่บันทึกไว้" />
+        <MetricCard label="อัตราซ่อมฉุกเฉิน (Emergency Rate)" valueText={`${k.emergencyRatePct.toFixed(1)}%`} pct={k.emergencyRatePct} color={emergColor}
+          desc="สัดส่วนงานซ่อมฉุกเฉินที่ไม่ได้วางแผนล่วงหน้า ยิ่งต่ำยิ่งดี" />
+        <MetricCard label="อัตรางานเกินกำหนด (Overdue Rate)" valueText={`${k.overdueRatePct.toFixed(1)}%`} pct={k.overdueRatePct} color={overdueColor}
+          desc="สัดส่วนงานที่เลยกำหนดดำเนินการ ควรควบคุมให้อยู่ในระดับต่ำที่สุด" />
+      </div>
+
+      <div className="metric-num-grid">
+        <KPI label="MTTR — เวลาซ่อมเฉลี่ย" value={`${k.mttrHours.toFixed(1)} ชม./ครั้ง`} sub="เวลาหยุดเครื่องเฉลี่ยต่องานซ่อม 1 ครั้ง" />
+        <KPI label="MTBF — ระยะห่างการเสียเฉลี่ย" value={k.mtbfDays !== null ? `${k.mtbfDays.toFixed(0)} วัน` : "ข้อมูลไม่พอ"} sub="ระยะเวลาเฉลี่ยระหว่างการเสียแต่ละครั้งต่ออุปกรณ์" />
+        <KPI label="ต้นทุนเฉลี่ยต่องาน" value={fmtTHB(k.avgCostPerJob)} sub="ค่าใช้จ่ายเฉลี่ยต่องานซ่อมบำรุง 1 ครั้ง" />
+      </div>
+    </div>
+  );
+}
+
+function ScheduleForm({ initial, equipmentOptions, onCancel, onSave }) {
+  const [form, setForm] = useState(() => ({
+    id: (initial && initial.id) || null,
+    equipment: (initial && initial.equipment) || "",
+    nextDate: (initial && initial.nextDate) || todayISO(),
+    intervalDays: initial && initial.intervalDays !== undefined && initial.intervalDays !== null ? initial.intervalDays : "",
+    note: (initial && initial.note) || "",
+  }));
+  const [error, setError] = useState("");
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.equipment.trim() || !form.nextDate) {
+      setError("กรุณาระบุชื่ออุปกรณ์และวันครบกำหนด");
+      return;
+    }
+    onSave({ ...form, intervalDays: form.intervalDays === "" ? null : Number(form.intervalDays) });
+  };
+
+  return (
+    <form className="panel" onSubmit={submit}>
+      <div className="form-grid">
+        <div className="field full">
+          <label>ชื่ออุปกรณ์ / เครื่องจักร</label>
+          <input className="input" list="equip-options" value={form.equipment} onChange={(e) => set("equipment", e.target.value)} placeholder="เลือกหรือพิมพ์ชื่ออุปกรณ์" />
+          <datalist id="equip-options">
+            {equipmentOptions.map((name) => <option key={name} value={name} />)}
+          </datalist>
+        </div>
+        <div className="field">
+          <label>วันครบกำหนดถัดไป</label>
+          <input className="input" type="date" value={form.nextDate} onChange={(e) => set("nextDate", e.target.value)} />
+        </div>
+        <div className="field">
+          <label>รอบซ้ำ (วัน) — เว้นว่างถ้าไม่ซ้ำ</label>
+          <input className="input" type="number" min="1" value={form.intervalDays} onChange={(e) => set("intervalDays", e.target.value)} placeholder="เช่น 30" />
+        </div>
+        <div className="field full">
+          <label>รายละเอียดการแจ้งเตือน</label>
+          <textarea className="input" value={form.note} onChange={(e) => set("note", e.target.value)} placeholder="สิ่งที่ต้องตรวจสอบหรือดำเนินการ" />
+        </div>
+      </div>
+      {error && <div style={{ color: COLORS.red, fontSize: 12.5, marginTop: 12 }}>{error}</div>}
+      <div className="form-actions">
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>ยกเลิก</button>
+        <button type="submit" className="btn">บันทึกการแจ้งเตือน</button>
+      </div>
+    </form>
+  );
+}
+
+function AlertsPage({ alerts, records, onCompleteSchedule, onDeleteSchedule, onSaveSchedule, onGoToRecord }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(null);
+
+  if (!alerts) return <div className="loading-wrap">กำลังโหลดข้อมูล…</div>;
+
+  const equipmentOptions = Array.from(new Set((records || []).map((r) => r.equipment)));
+  const totalAlerts = alerts.overdueRecords.length + alerts.overdueSchedules.length + alerts.dueSoonSchedules.length;
+
+  const openNew = () => { setEditingSchedule({}); setShowForm(true); };
+  const openEdit = (s) => { setEditingSchedule(s); setShowForm(true); };
+  const closeForm = () => { setShowForm(false); setEditingSchedule(null); };
+  const handleSave = (sc) => { onSaveSchedule(sc); closeForm(); };
+
+  return (
+    <div>
+      <div className="page-head">
+        <div>
+          <div className="page-title">แจ้งเตือนซ่อมบำรุง</div>
+          <div className="page-desc">{totalAlerts > 0 ? `มี ${totalAlerts} รายการที่ต้องติดตาม` : "ไม่มีรายการที่ต้องติดตามด่วนในขณะนี้"}</div>
+        </div>
+        {!showForm && <button className="btn" onClick={openNew}>+ ตั้งการแจ้งเตือนใหม่</button>}
+      </div>
+
+      {showForm && (
+        <ScheduleForm initial={editingSchedule} equipmentOptions={equipmentOptions} onCancel={closeForm} onSave={handleSave} />
+      )}
+
+      <div className="alert-section-title">งานซ่อมที่เกินกำหนด</div>
+      {alerts.overdueRecords.length === 0 ? (
+        <div className="alert-empty">ไม่มีงานซ่อมที่เกินกำหนดในขณะนี้</div>
+      ) : (
+        <div className="alert-list">
+          {alerts.overdueRecords.map((r) => (
+            <div key={r.id} className="alert-item">
+              <div className="alert-main">
+                <div className="alert-title">{r.equipment}</div>
+                <div className="alert-sub">{r.note || TYPE_META[r.type].label} · ช่าง {r.technician}</div>
+              </div>
+              <div className="alert-days mono" style={{ color: COLORS.red }}>{fmtDateTH(r.date)}</div>
+              <button className="icon-btn" onClick={() => onGoToRecord(r)}>เปิดดู</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="alert-section-title">ครบกำหนดแล้ว (จากรอบแจ้งเตือน)</div>
+      {alerts.overdueSchedules.length === 0 ? (
+        <div className="alert-empty">ไม่มีรอบแจ้งเตือนที่เลยกำหนด</div>
+      ) : (
+        <div className="alert-list">
+          {alerts.overdueSchedules.map((s) => (
+            <div key={s.id} className="alert-item">
+              <div className="alert-main">
+                <div className="alert-title">{s.equipment}</div>
+                <div className="alert-sub">{s.note || "ถึงรอบตรวจสอบ/ซ่อมบำรุง"}</div>
+              </div>
+              <div className="alert-days mono" style={{ color: COLORS.red }}>เลยกำหนด {Math.abs(s.daysLeft)} วัน</div>
+              <div className="row-actions" style={{ opacity: 1 }}>
+                <button className="icon-btn" onClick={() => onCompleteSchedule(s)}>เสร็จแล้ว</button>
+                <button className="icon-btn" onClick={() => openEdit(s)}>แก้ไข</button>
+                <button className="icon-btn" onClick={() => onDeleteSchedule(s.id)}>ลบ</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="alert-section-title">ใกล้ถึงกำหนด (ภายใน 7 วัน)</div>
+      {alerts.dueSoonSchedules.length === 0 ? (
+        <div className="alert-empty">ไม่มีรอบแจ้งเตือนที่ใกล้ถึงกำหนด</div>
+      ) : (
+        <div className="alert-list">
+          {alerts.dueSoonSchedules.map((s) => (
+            <div key={s.id} className="alert-item warn">
+              <div className="alert-main">
+                <div className="alert-title">{s.equipment}</div>
+                <div className="alert-sub">{s.note || "ถึงรอบตรวจสอบ/ซ่อมบำรุง"}</div>
+              </div>
+              <div className="alert-days mono" style={{ color: COLORS.amber }}>{s.daysLeft === 0 ? "วันนี้" : `อีก ${s.daysLeft} วัน`}</div>
+              <div className="row-actions" style={{ opacity: 1 }}>
+                <button className="icon-btn" onClick={() => onCompleteSchedule(s)}>เสร็จแล้ว</button>
+                <button className="icon-btn" onClick={() => openEdit(s)}>แก้ไข</button>
+                <button className="icon-btn" onClick={() => onDeleteSchedule(s.id)}>ลบ</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="alert-section-title">กำหนดการถัดไป</div>
+      {alerts.upcomingSchedules.length === 0 ? (
+        <div className="alert-empty">ยังไม่มีรอบแจ้งเตือนอื่นที่ตั้งไว้</div>
+      ) : (
+        <div className="alert-list">
+          {alerts.upcomingSchedules.map((s) => (
+            <div key={s.id} className="alert-item ok">
+              <div className="alert-main">
+                <div className="alert-title">{s.equipment}</div>
+                <div className="alert-sub">{s.note || "ถึงรอบตรวจสอบ/ซ่อมบำรุง"}</div>
+              </div>
+              <div className="alert-days mono" style={{ color: COLORS.teal }}>{fmtDateTH(s.nextDate)}</div>
+              <div className="row-actions" style={{ opacity: 1 }}>
+                <button className="icon-btn" onClick={() => openEdit(s)}>แก้ไข</button>
+                <button className="icon-btn" onClick={() => onDeleteSchedule(s.id)}>ลบ</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
