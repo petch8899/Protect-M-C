@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MAINTLOG — ระบบบันทึกการซ่อมบำรุง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 
 <!-- React -->
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -19,126 +19,139 @@
 
 <style>
   :root {
-    --bg:#1B1E21; --surface:#22262A; --surface-alt:#2A2F34;
-    --border:#383D42; --hi:#ECE8E1; --lo:#949BA1;
-    --amber:#E3A542; --teal:#5B9279; --red:#C4574E; --blue:#5C8AA6;
+    --bg:#F5F7FA; --surface:#FFFFFF; --surface-alt:#F1F4F8;
+    --border:#E4E8EF; --hi:#1F2430; --lo:#68707D;
+    --primary:#2F6FED; --primary-soft:#EAF1FE;
+    --amber:#F59E0B; --amber-soft:#FEF3E2;
+    --teal:#16A34A; --teal-soft:#E9F8EF;
+    --red:#EF4444; --red-soft:#FDEDED;
+    --blue:#0EA5E9; --blue-soft:#E8F7FE;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 2px 8px rgba(16,24,40,.06);
+    --radius: 12px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); }
-  body { font-family: 'IBM Plex Sans', sans-serif; color: var(--hi); }
+  body { font-family: 'Noto Sans Thai', 'IBM Plex Sans', sans-serif; color: var(--hi); -webkit-font-smoothing: antialiased; }
   #root { min-height: 100vh; }
 
-  .app { background: var(--bg); color: var(--hi); min-height: 100vh; display: flex; font-size: 14px; }
-  .headline { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.01em; }
+  .app { background: var(--bg); color: var(--hi); min-height: 100vh; display: flex; font-size: 14.5px; }
+  .headline { font-family: 'Kanit', sans-serif; font-weight: 600; }
 
-  .sidebar { width: 208px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 22px 14px; display: flex; flex-direction: column; gap: 4px; }
-  .brand { padding: 0 8px 20px 8px; }
-  .brand-mark { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .brand-dot { width: 9px; height: 9px; background: var(--amber); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
-  .brand-title { font-family:'Barlow Condensed'; font-weight:700; font-size: 19px; line-height:1; }
-  .brand-sub { color: var(--lo); font-size: 11px; margin-top: 3px; }
-  .nav-item { display:flex; align-items:center; gap: 10px; padding: 10px 10px; border-radius: 3px; color: var(--lo); cursor: pointer; border: 1px solid transparent; font-size: 13.5px; user-select:none; }
+  .sidebar { width: 232px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 14px; display: flex; flex-direction: column; gap: 3px; }
+  .brand { padding: 4px 8px 22px 8px; }
+  .brand-mark { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
+  .brand-dot { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--primary), #5B93F5); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: var(--shadow); }
+  .brand-dot::after { content: ""; width: 11px; height: 11px; border-radius: 3px; background: #fff; }
+  .brand-title { font-family:'Kanit'; font-weight:700; font-size: 19px; line-height:1.1; color: var(--hi); }
+  .brand-sub { color: var(--lo); font-size: 11.5px; margin-top: 3px; }
+  .nav-item { display:flex; align-items:center; gap: 11px; padding: 10px 12px; border-radius: 9px; color: var(--lo); cursor: pointer; font-size: 13.5px; font-weight: 500; user-select:none; transition: background .12s, color .12s; }
   .nav-item:hover { color: var(--hi); background: var(--surface-alt); }
-  .nav-item.active { color: var(--hi); background: var(--surface-alt); border-color: var(--border); }
-  .nav-item.active .nav-ico { background: var(--amber); }
-  .nav-ico { width: 5px; height: 5px; background: var(--border); flex-shrink:0; }
-  .nav-count { margin-left:auto; font-family:'IBM Plex Mono'; font-size: 10.5px; color: var(--lo); background: var(--bg); padding: 1px 6px; border: 1px solid var(--border); }
-  .sidebar-foot { margin-top: auto; padding: 10px 8px 0 8px; border-top: 1px solid var(--border); color: var(--lo); font-size: 11px; line-height: 1.6;}
+  .nav-item.active { color: var(--primary); background: var(--primary-soft); }
+  .nav-item.active .nav-ico { color: var(--primary); }
+  .nav-ico { width: 18px; height: 18px; flex-shrink:0; color: var(--lo); display:flex; align-items:center; justify-content:center; }
+  .nav-ico svg { width: 18px; height: 18px; }
+  .nav-count { margin-left:auto; font-family:'IBM Plex Mono'; font-size: 10.5px; color: var(--lo); background: var(--surface-alt); padding: 2px 7px; border-radius: 999px; }
+  .sidebar-foot { margin-top: auto; padding: 14px 10px 0 10px; border-top: 1px solid var(--border); color: var(--lo); font-size: 11px; line-height: 1.6;}
 
-  .main { flex: 1; padding: 28px 34px 60px; max-width: 1180px; }
+  .main { flex: 1; padding: 30px 36px 60px; max-width: 1220px; }
   .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom: 22px; gap: 12px; flex-wrap: wrap; }
-  .page-title { font-family:'Barlow Condensed'; font-weight: 700; font-size: 26px; }
-  .page-desc { color: var(--lo); font-size: 12.5px; margin-top: 3px; }
-  .btn { font-family:'IBM Plex Sans'; font-weight: 500; font-size: 13px; padding: 9px 16px; background: var(--amber); color: #1B1E21; border: none; cursor: pointer; border-radius: 2px; }
-  .btn:hover { filter: brightness(1.08); }
-  .btn-ghost { background: transparent; color: var(--hi); border: 1px solid var(--border); }
-  .btn-ghost:hover { border-color: var(--lo); }
+  .page-title { font-family:'Kanit'; font-weight: 600; font-size: 25px; color: var(--hi); }
+  .page-desc { color: var(--lo); font-size: 13px; margin-top: 4px; }
+  .btn { font-family:'Noto Sans Thai'; font-weight: 600; font-size: 13.5px; padding: 10px 18px; background: var(--primary); color: #fff; border: none; cursor: pointer; border-radius: 9px; box-shadow: var(--shadow); transition: filter .12s, transform .05s; }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:active { transform: translateY(1px); }
+  .btn-ghost { background: var(--surface); color: var(--hi); border: 1px solid var(--border); box-shadow: none; }
+  .btn-ghost:hover { border-color: var(--lo); filter:none; background: var(--surface-alt); }
 
-  .bracket { position: relative; background: var(--surface); border: 1px solid var(--border); padding: 16px 18px; }
-  .bk { position: absolute; width: 9px; height: 9px; border-color: var(--amber); }
-  .bk-tl { top: -1px; left: -1px; border-top: 2px solid var(--amber); border-left: 2px solid var(--amber); }
-  .bk-tr { top: -1px; right: -1px; border-top: 2px solid var(--amber); border-right: 2px solid var(--amber); }
-  .bk-bl { bottom: -1px; left: -1px; border-bottom: 2px solid var(--amber); border-left: 2px solid var(--amber); }
-  .bk-br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--amber); border-right: 2px solid var(--amber); }
+  .bracket { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; }
+  .bk { display: none; }
 
   .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
-  .kpi-label { color: var(--lo); font-size: 11px; margin-bottom: 8px; }
-  .kpi-value { font-family:'Barlow Condensed'; font-weight: 700; font-size: 28px; line-height:1; }
-  .kpi-sub { color: var(--lo); font-size: 11px; margin-top: 6px; }
+  .kpi-label { color: var(--lo); font-size: 11.5px; margin-bottom: 9px; font-weight: 500; }
+  .kpi-value { font-family:'Kanit'; font-weight: 700; font-size: 27px; line-height:1; color: var(--hi); }
+  .kpi-sub { color: var(--lo); font-size: 11.5px; margin-top: 7px; }
 
-  .panel { background: var(--surface); border: 1px solid var(--border); padding: 18px 20px; margin-bottom: 16px; }
-  .panel-title { font-family:'Barlow Condensed'; font-weight: 600; font-size: 16px; margin-bottom: 2px; }
-  .panel-sub { color: var(--lo); font-size: 11.5px; margin-bottom: 14px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 16px; }
+  .panel-title { font-family:'Kanit'; font-weight: 600; font-size: 16px; margin-bottom: 2px; color: var(--hi); }
+  .panel-sub { color: var(--lo); font-size: 12px; margin-bottom: 16px; }
   .chart-row { display:grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
   .chart-row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-  .tag { font-size: 10.5px; padding: 2px 8px; border: 1px solid; border-radius: 2px; white-space:nowrap; }
+  .tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space:nowrap; border: none; }
 
   .toolbar { display:flex; gap: 10px; margin-bottom: 14px; align-items:center; flex-wrap: wrap; }
-  .input, select.input { background: var(--surface); border: 1px solid var(--border); color: var(--hi); padding: 9px 11px; font-size: 13px; font-family:'IBM Plex Sans'; border-radius: 2px; }
-  .input:focus, select.input:focus { outline: none; border-color: var(--amber); }
+  .input, select.input { background: var(--surface); border: 1px solid var(--border); color: var(--hi); padding: 10px 12px; font-size: 13.5px; font-family:'Noto Sans Thai'; border-radius: 9px; transition: border-color .12s, box-shadow .12s; }
+  .input:focus, select.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
   .search { flex: 1; min-width: 180px; }
   table { width: 100%; border-collapse: collapse; }
-  thead th { text-align: left; color: var(--lo); font-weight: 500; font-size: 10.5px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-  tbody td { padding: 11px 10px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  thead th { text-align: left; color: var(--lo); font-weight: 600; font-size: 11px; padding: 12px 14px; background: var(--surface-alt); }
+  thead tr th:first-child { border-top-left-radius: var(--radius); }
+  thead tr th:last-child { border-top-right-radius: var(--radius); }
+  tbody td { padding: 13px 14px; border-bottom: 1px solid var(--border); font-size: 13.5px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: var(--surface-alt); }
-  .equip-name { font-weight: 500; }
-  .equip-note { color: var(--lo); font-size: 11.5px; margin-top: 2px; max-width: 260px; }
+  .equip-name { font-weight: 600; }
+  .equip-note { color: var(--lo); font-size: 12px; margin-top: 3px; max-width: 260px; }
   .row-actions { display:flex; gap: 6px; }
-  .icon-btn { background: none; border: 1px solid var(--border); color: var(--lo); font-size: 11px; padding: 4px 9px; cursor:pointer; border-radius: 2px; }
-  .icon-btn:hover { color: var(--hi); border-color: var(--lo); }
-  .mono { font-family: 'IBM Plex Mono'; font-size: 12px; }
+  .icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--lo); font-size: 11.5px; font-weight: 500; padding: 5px 11px; cursor:pointer; border-radius: 7px; transition: all .12s; }
+  .icon-btn:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+  .mono { font-family: 'IBM Plex Mono'; font-size: 12.5px; }
 
-  .empty { text-align:center; padding: 50px 20px; color: var(--lo); }
+  .empty { text-align:center; padding: 56px 20px; color: var(--lo); background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
   .empty .headline { font-size: 18px; color: var(--hi); margin-bottom: 6px; }
 
-  .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
-  .field { display:flex; flex-direction:column; gap: 6px; }
+  .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+  .field { display:flex; flex-direction:column; gap: 7px; }
   .field.full { grid-column: 1 / -1; }
-  .field label { font-size: 11.5px; color: var(--lo); }
-  textarea.input { resize: vertical; min-height: 72px; font-family:'IBM Plex Sans'; }
-  .form-actions { display:flex; gap: 10px; margin-top: 18px; justify-content:flex-end; }
+  .field label { font-size: 12px; color: var(--lo); font-weight: 500; }
+  textarea.input { resize: vertical; min-height: 80px; font-family:'Noto Sans Thai'; }
+  .form-actions { display:flex; gap: 10px; margin-top: 20px; justify-content:flex-end; }
 
-  .toast { position: fixed; bottom: 24px; right: 28px; background: var(--surface-alt); border: 1px solid var(--border); border-left: 3px solid var(--teal); padding: 12px 18px; font-size: 13px; z-index: 50; }
+  .toast { position: fixed; bottom: 24px; right: 28px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--teal); border-radius: 10px; box-shadow: var(--shadow); padding: 13px 20px; font-size: 13.5px; font-weight: 500; z-index: 50; }
   .toast.err { border-left-color: var(--red); }
   .loading-wrap { display:flex; align-items:center; justify-content:center; height: 60vh; width:100%; color: var(--lo); }
 
-  .nav-badge { margin-left:auto; font-family:'IBM Plex Mono'; font-size: 10px; font-weight:600; color:#1B1E21; background: var(--red); padding: 1px 6px; border-radius: 8px; }
+  .nav-badge { margin-left:auto; font-family:'IBM Plex Mono'; font-size: 10.5px; font-weight:700; color:#fff; background: var(--red); padding: 2px 7px; border-radius: 999px; }
 
   .metric-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
-  .metric-card { background: var(--surface); border: 1px solid var(--border); padding: 16px 18px; position: relative; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; position: relative; }
   .metric-top { display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 4px; gap: 8px; }
-  .metric-label { color: var(--lo); font-size: 12px; }
-  .metric-status { font-size: 10px; padding: 1px 7px; border-radius: 2px; border: 1px solid; white-space:nowrap; }
-  .metric-value { font-family:'Barlow Condensed'; font-weight: 700; font-size: 30px; line-height:1; margin: 6px 0 10px; }
-  .metric-desc { color: var(--lo); font-size: 11px; margin-top: 8px; line-height: 1.5; }
-  .progress-track { height: 6px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 3px; overflow:hidden; }
-  .progress-fill { height: 100%; border-radius: 2px; }
+  .metric-label { color: var(--lo); font-size: 12.5px; font-weight: 500; }
+  .metric-status { font-size: 10.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space:nowrap; border: none; }
+  .metric-value { font-family:'Kanit'; font-weight: 700; font-size: 30px; line-height:1; margin: 8px 0 12px; }
+  .metric-desc { color: var(--lo); font-size: 11.5px; margin-top: 8px; line-height: 1.55; }
+  .progress-track { height: 7px; background: var(--surface-alt); border-radius: 999px; overflow:hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; }
   .metric-num-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
 
-  .alert-section-title { font-family:'Barlow Condensed'; font-weight:600; font-size: 16px; margin: 24px 0 12px; display:flex; align-items:center; gap: 8px; }
+  .alert-section-title { font-family:'Kanit'; font-weight:600; font-size: 15.5px; margin: 26px 0 12px; display:flex; align-items:center; gap: 8px; color: var(--hi); }
   .alert-section-title:first-child { margin-top: 0; }
-  .alert-list { display:flex; flex-direction:column; gap: 8px; margin-bottom: 6px; }
-  .alert-item { display:flex; align-items:center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--red); padding: 12px 16px; }
+  .alert-list { display:flex; flex-direction:column; gap: 9px; margin-bottom: 6px; }
+  .alert-item { display:flex; align-items:center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--red); border-radius: 10px; box-shadow: var(--shadow); padding: 13px 16px; }
   .alert-item.warn { border-left-color: var(--amber); }
   .alert-item.ok { border-left-color: var(--teal); }
   .alert-main { flex: 1; min-width: 0; }
-  .alert-title { font-weight: 500; font-size: 13.5px; }
-  .alert-sub { color: var(--lo); font-size: 11.5px; margin-top: 2px; }
-  .alert-days { font-family:'IBM Plex Mono'; font-size: 12px; white-space: nowrap; }
-  .alert-empty { color: var(--lo); font-size: 12.5px; padding: 14px 4px; }
+  .alert-title { font-weight: 600; font-size: 13.5px; }
+  .alert-sub { color: var(--lo); font-size: 12px; margin-top: 3px; }
+  .alert-days { font-family:'IBM Plex Mono'; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .alert-empty { color: var(--lo); font-size: 13px; padding: 16px 4px; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; text-align:center; }
   .schedule-toggle { display:flex; justify-content:flex-end; margin-bottom: 14px; }
 
   @media (max-width: 880px) {
     .app { flex-direction: column; }
-    .sidebar { width: 100%; flex-direction: row; overflow-x: auto; border-right:none; border-bottom:1px solid var(--border); }
+    .sidebar { width: 100%; flex-direction: row; overflow-x: auto; border-right:none; border-bottom:1px solid var(--border); padding: 10px 12px; gap: 6px; }
     .sidebar-foot { display:none; }
     .brand { display:none; }
+    .nav-item { flex-direction: column; gap: 4px; padding: 8px 12px; font-size: 11px; min-width: 68px; position: relative; }
+    .nav-count { display:none; }
+    .nav-badge { position: absolute; top: 2px; right: 6px; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .chart-row, .chart-row2 { grid-template-columns: 1fr; }
     .form-grid { grid-template-columns: 1fr; }
     .metric-grid, .metric-num-grid { grid-template-columns: 1fr; }
     .main { padding: 18px; }
+    .row-actions { opacity: 1 !important; }
+    .btn, .icon-btn { min-height: 38px; }
   }
 </style>
 </head>
@@ -153,9 +166,9 @@ const {
 } = Recharts;
 
 const COLORS = {
-  bg: "#1B1E21", surface: "#22262A", surfaceAlt: "#2A2F34",
-  border: "#383D42", hi: "#ECE8E1", lo: "#949BA1",
-  amber: "#E3A542", teal: "#5B9279", red: "#C4574E", blue: "#5C8AA6",
+  bg: "#F5F7FA", surface: "#FFFFFF", surfaceAlt: "#F1F4F8",
+  border: "#E4E8EF", hi: "#1F2430", lo: "#68707D",
+  primary: "#2F6FED", amber: "#F59E0B", teal: "#16A34A", red: "#EF4444", blue: "#0EA5E9",
 };
 
 const TYPE_META = {
@@ -205,6 +218,34 @@ const SEED_SCHEDULES = [
   { id: uid(), equipment: "สายพานลำเลียง B", nextDate: "2026-08-29", intervalDays: 14, note: "ติดตามผลการเปลี่ยนมอเตอร์ใหม่" },
 ];
 
+const NAV_ICONS = {
+  dashboard: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="12" width="4" height="8" /><rect x="10" y="7" width="4" height="13" /><rect x="16" y="3" width="4" height="17" />
+    </svg>
+  ),
+  kpi: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="13" r="8" /><path d="M12 13l4-4" /><path d="M9 3h6" />
+    </svg>
+  ),
+  alerts: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 01-3.4 0" />
+    </svg>
+  ),
+  records: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" />
+    </svg>
+  ),
+  new: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" /><path d="M12 8v8" /><path d="M8 12h8" />
+    </svg>
+  ),
+};
+
 function Bracket({ children, className = "" }) {
   return (
     <div className={`bracket ${className}`}>
@@ -215,7 +256,7 @@ function Bracket({ children, className = "" }) {
   );
 }
 function Tag({ meta }) {
-  return <span className="tag" style={{ color: meta.color, borderColor: meta.color + "55", background: meta.color + "14" }}>{meta.label}</span>;
+  return <span className="tag" style={{ color: meta.color, background: meta.color + "1A" }}>{meta.label}</span>;
 }
 function KPI({ label, value, sub, accent }) {
   return (
@@ -457,7 +498,7 @@ function App() {
         ].map(([key, label]) => (
           <div key={key} className={`nav-item ${tab === key ? "active" : ""}`}
                onClick={() => { setTab(key); if (key === "new") setEditing({}); }}>
-            <span className="nav-ico" />
+            <span className="nav-ico">{NAV_ICONS[key]}</span>
             <span>{label}</span>
             {key === "records" && <span className="nav-count">{records ? records.length : "–"}</span>}
             {key === "alerts" && alerts && alerts.badgeCount > 0 && <span className="nav-badge">{alerts.badgeCount}</span>}
@@ -538,8 +579,8 @@ function Dashboard({ stats, onNew }) {
               <CartesianGrid stroke={COLORS.border} vertical={false} />
               <XAxis dataKey="label" tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={{ stroke: COLORS.border }} tickLine={false} />
               <YAxis tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={{ background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, fontSize: 12, borderRadius: 2 }} labelStyle={{ color: COLORS.hi }} formatter={(v) => [fmtTHB(v), "ค่าใช้จ่าย"]} />
-              <Line type="monotone" dataKey="cost" stroke={COLORS.amber} strokeWidth={2} dot={{ r: 3, fill: COLORS.amber }} />
+              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} labelStyle={{ color: COLORS.hi }} formatter={(v) => [fmtTHB(v), "ค่าใช้จ่าย"]} />
+              <Line type="monotone" dataKey="cost" stroke={COLORS.primary} strokeWidth={2.5} dot={{ r: 3, fill: COLORS.primary }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -552,7 +593,7 @@ function Dashboard({ stats, onNew }) {
               <Pie data={stats.byType} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={2} stroke="none">
                 {stats.byType.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Pie>
-              <Tooltip contentStyle={{ background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, fontSize: 12, borderRadius: 2 }} />
+              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} />
               <Legend verticalAlign="bottom" height={30} formatter={(val) => <span style={{ color: COLORS.lo, fontSize: 11.5 }}>{val}</span>} />
             </PieChart>
           </ResponsiveContainer>
@@ -568,8 +609,8 @@ function Dashboard({ stats, onNew }) {
               <CartesianGrid stroke={COLORS.border} horizontal={false} />
               <XAxis type="number" tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
               <YAxis type="category" dataKey="equipment" tick={{ fill: COLORS.hi, fontSize: 11.5 }} axisLine={false} tickLine={false} width={120} />
-              <Tooltip contentStyle={{ background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, fontSize: 12, borderRadius: 2 }} formatter={(v) => [fmtTHB(v), "ค่าใช้จ่าย"]} cursor={{ fill: COLORS.surfaceAlt }} />
-              <Bar dataKey="cost" fill={COLORS.blue} radius={[0, 2, 2, 0]} barSize={14} />
+              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} formatter={(v) => [fmtTHB(v), "ค่าใช้จ่าย"]} cursor={{ fill: COLORS.surfaceAlt }} />
+              <Bar dataKey="cost" fill={COLORS.blue} radius={[0, 4, 4, 0]} barSize={14} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -582,8 +623,8 @@ function Dashboard({ stats, onNew }) {
               <CartesianGrid stroke={COLORS.border} vertical={false} />
               <XAxis dataKey="name" tick={{ fill: COLORS.lo, fontSize: 11.5 }} axisLine={{ stroke: COLORS.border }} tickLine={false} />
               <YAxis tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={{ background: COLORS.surfaceAlt, border: `1px solid ${COLORS.border}`, fontSize: 12, borderRadius: 2 }} cursor={{ fill: COLORS.surfaceAlt }} />
-              <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={38}>
+              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} cursor={{ fill: COLORS.surfaceAlt }} />
+              <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={38}>
                 {stats.byStatus.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Bar>
             </BarChart>
