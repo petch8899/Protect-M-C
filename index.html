@@ -1,1051 +1,1299 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MAINTLOG — ระบบบันทึกการซ่อมบำรุง</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบบันทึกการซ่อมบำรุงเครื่องจักร</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-
-<!-- React -->
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<!-- Recharts + deps -->
-<script crossorigin src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-is@18/umd/react-is.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/recharts@2.15.0/umd/Recharts.js"></script>
-<!-- Babel (in-browser JSX transform) -->
-<script crossorigin src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
-
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#F5F7FA; --surface:#FFFFFF; --surface-alt:#F1F4F8;
-    --border:#E4E8EF; --hi:#1F2430; --lo:#68707D;
-    --primary:#2F6FED; --primary-soft:#EAF1FE;
-    --amber:#F59E0B; --amber-soft:#FEF3E2;
-    --teal:#16A34A; --teal-soft:#E9F8EF;
-    --red:#EF4444; --red-soft:#FDEDED;
-    --blue:#0EA5E9; --blue-soft:#E8F7FE;
-    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 2px 8px rgba(16,24,40,.06);
-    --radius: 12px;
+  :root{
+    --bg:#14171c;
+    --panel:#1b1f26;
+    --panel-2:#20252d;
+    --line:#2c323b;
+    --ink:#e9e7e0;
+    --muted:#8b93a0;
+    --accent:#e2622c;
+    --accent-dim:#7a3a20;
+    --amber:#d9a441;
+    --ok:#4caf7d;
+    --warn:#e2492f;
+    --paper:#f3f0e8;
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); }
-  body { font-family: 'Noto Sans Thai', 'IBM Plex Sans', sans-serif; color: var(--hi); -webkit-font-smoothing: antialiased; }
-  #root { min-height: 100vh; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  ::selection{background:var(--accent);color:#fff;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+  button{font-family:'Inter',sans-serif;cursor:pointer;}
+  input,select,textarea{font-family:'Inter',sans-serif;}
 
-  .app { background: var(--bg); color: var(--hi); min-height: 100vh; display: flex; font-size: 14.5px; }
-  .headline { font-family: 'Kanit', sans-serif; font-weight: 600; }
+  /* ---------- Auth screens ---------- */
+  .auth-wrap{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:2rem;
+    position:relative;
+    overflow:hidden;
+  }
+  .auth-wrap::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:42px 42px;
+    opacity:.25;
+    mask-image:radial-gradient(circle at 50% 40%, black, transparent 75%);
+  }
+  .auth-card{
+    position:relative;
+    z-index:2;
+    width:min(92vw,420px);
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:2.4rem 2.2rem;
+  }
+  .auth-brand{
+    display:flex;
+    align-items:center;
+    gap:.7rem;
+    margin-bottom:1.8rem;
+  }
+  .gear-mark{
+    width:34px;height:34px;flex:none;
+    color:var(--accent);
+  }
+  .auth-brand .name{
+    font-size:.95rem;
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+  .auth-brand .name small{
+    display:block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:.68rem;
+    color:var(--muted);
+    letter-spacing:.08em;
+    margin-top:.15rem;
+  }
+  .auth-card h1{
+    font-size:1.6rem;
+    margin:0 0 .35rem;
+    font-weight:600;
+  }
+  .auth-card p.lede{
+    color:var(--muted);
+    font-size:.88rem;
+    margin:0 0 1.6rem;
+    line-height:1.5;
+  }
+  .field{
+    margin-bottom:1rem;
+  }
+  .field label{
+    display:block;
+    font-size:.76rem;
+    color:var(--muted);
+    margin-bottom:.4rem;
+    letter-spacing:.02em;
+  }
+  .field input, .field select, .field textarea{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--ink);
+    padding:.68rem .8rem;
+    font-size:.92rem;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    border-color:var(--accent);
+  }
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:.8rem;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:.5rem;
+    border:none;
+    border-radius:8px;
+    padding:.75rem 1.1rem;
+    font-size:.9rem;
+    font-weight:600;
+    transition:filter .15s ease, background .15s ease;
+  }
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-block{width:100%;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--muted);}
+  .btn-sm{padding:.45rem .8rem;font-size:.8rem;}
+  .btn-danger{background:transparent;color:var(--warn);border:1px solid var(--warn);}
+  .btn-danger:hover{background:var(--warn);color:#fff;}
 
-  .sidebar { width: 232px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 14px; display: flex; flex-direction: column; gap: 3px; }
-  .brand { padding: 4px 8px 22px 8px; }
-  .brand-mark { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
-  .brand-dot { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--primary), #5B93F5); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: var(--shadow); }
-  .brand-dot::after { content: ""; width: 11px; height: 11px; border-radius: 3px; background: #fff; }
-  .brand-title { font-family:'Kanit'; font-weight:700; font-size: 19px; line-height:1.1; color: var(--hi); }
-  .brand-sub { color: var(--lo); font-size: 11.5px; margin-top: 3px; }
-  .nav-item { display:flex; align-items:center; gap: 11px; padding: 10px 12px; border-radius: 9px; color: var(--lo); cursor: pointer; font-size: 13.5px; font-weight: 500; user-select:none; transition: background .12s, color .12s; }
-  .nav-item:hover { color: var(--hi); background: var(--surface-alt); }
-  .nav-item.active { color: var(--primary); background: var(--primary-soft); }
-  .nav-item.active .nav-ico { color: var(--primary); }
-  .nav-ico { width: 18px; height: 18px; flex-shrink:0; color: var(--lo); display:flex; align-items:center; justify-content:center; }
-  .nav-ico svg { width: 18px; height: 18px; }
-  .nav-count { margin-left:auto; font-family:'IBM Plex Mono'; font-size: 10.5px; color: var(--lo); background: var(--surface-alt); padding: 2px 7px; border-radius: 999px; }
-  .sidebar-foot { margin-top: auto; padding: 14px 10px 0 10px; border-top: 1px solid var(--border); color: var(--lo); font-size: 11px; line-height: 1.6;}
+  .switch-line{
+    text-align:center;
+    margin-top:1.4rem;
+    font-size:.85rem;
+    color:var(--muted);
+  }
+  .switch-line a{
+    color:var(--accent);
+    text-decoration:none;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .switch-line a:hover{text-decoration:underline;}
+  .form-error{
+    background:rgba(226,73,47,.12);
+    border:1px solid var(--warn);
+    color:#ff9a86;
+    font-size:.82rem;
+    padding:.6rem .8rem;
+    border-radius:8px;
+    margin-bottom:1rem;
+  }
+  .form-success{
+    background:rgba(76,175,125,.12);
+    border:1px solid var(--ok);
+    color:#9be8c4;
+    font-size:.82rem;
+    padding:.6rem .8rem;
+    border-radius:8px;
+    margin-bottom:1rem;
+  }
 
-  .main { flex: 1; padding: 30px 36px 60px; max-width: 1220px; }
-  .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom: 22px; gap: 12px; flex-wrap: wrap; }
-  .page-title { font-family:'Kanit'; font-weight: 600; font-size: 25px; color: var(--hi); }
-  .page-desc { color: var(--lo); font-size: 13px; margin-top: 4px; }
-  .btn { font-family:'Noto Sans Thai'; font-weight: 600; font-size: 13.5px; padding: 10px 18px; background: var(--primary); color: #fff; border: none; cursor: pointer; border-radius: 9px; box-shadow: var(--shadow); transition: filter .12s, transform .05s; }
-  .btn:hover { filter: brightness(1.06); }
-  .btn:active { transform: translateY(1px); }
-  .btn-ghost { background: var(--surface); color: var(--hi); border: 1px solid var(--border); box-shadow: none; }
-  .btn-ghost:hover { border-color: var(--lo); filter:none; background: var(--surface-alt); }
+  /* ---------- App shell ---------- */
+  .app-shell{
+    display:grid;
+    grid-template-columns:230px 1fr;
+    min-height:100vh;
+  }
+  .sidebar{
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    padding:1.4rem 1.1rem;
+  }
+  .sb-brand{
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    padding:0 .3rem .5rem;
+    margin-bottom:1.4rem;
+  }
+  .sb-brand .gear-mark{width:26px;height:26px;}
+  .sb-brand .name{font-size:.82rem;font-weight:600;line-height:1.25;}
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:.65rem;
+    padding:.65rem .8rem;
+    border-radius:8px;
+    font-size:.87rem;
+    color:var(--muted);
+    margin-bottom:.2rem;
+    border:none;
+    background:transparent;
+    width:100%;
+    text-align:left;
+  }
+  .nav-item svg{width:17px;height:17px;flex:none;}
+  .nav-item:hover{color:var(--ink);background:var(--panel-2);}
+  .nav-item.active{color:var(--ink);background:var(--panel-2);border-left:2px solid var(--accent);}
+  .sb-spacer{flex:1;}
+  .sb-user{
+    border-top:1px solid var(--line);
+    padding-top:1rem;
+    margin-top:.6rem;
+  }
+  .sb-user .who{font-size:.82rem;font-weight:600;}
+  .sb-user .role{font-size:.72rem;color:var(--muted);margin-top:.1rem;}
+  .sb-user button{
+    margin-top:.7rem;
+    width:100%;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--muted);
+    border-radius:8px;
+    padding:.5rem;
+    font-size:.78rem;
+  }
+  .sb-user button:hover{color:var(--ink);border-color:var(--muted);}
 
-  .bracket { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; }
-  .bk { display: none; }
+  .main{
+    background:var(--paper);
+    color:#1c2027;
+    padding:2rem 2.4rem 3rem;
+    overflow-x:hidden;
+  }
+  .main h1, .main h2{color:#1c2027;}
+  .topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    margin-bottom:1.8rem;
+    flex-wrap:wrap;
+    gap:1rem;
+  }
+  .topbar h1{font-size:1.5rem;margin:0 0 .2rem;font-weight:600;}
+  .topbar .sub{color:#77705f;font-size:.85rem;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:.7rem;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:#9c8f6f;
+    margin-bottom:.3rem;
+  }
 
-  .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
-  .kpi-label { color: var(--lo); font-size: 11.5px; margin-bottom: 9px; font-weight: 500; }
-  .kpi-value { font-family:'Kanit'; font-weight: 700; font-size: 27px; line-height:1; color: var(--hi); }
-  .kpi-sub { color: var(--lo); font-size: 11.5px; margin-top: 7px; }
+  /* dashboard cards */
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1rem;
+    margin-bottom:1.8rem;
+  }
+  .stat-card{
+    background:#fff;
+    border:1px solid #e3ddca;
+    border-radius:12px;
+    padding:1.1rem 1.2rem;
+  }
+  .stat-card .lbl{font-size:.76rem;color:#8a8267;margin-bottom:.4rem;}
+  .stat-card .val{font-family:'Space Grotesk',sans-serif;font-size:1.9rem;font-weight:600;}
+  .stat-card.warn .val{color:var(--warn);}
+  .stat-card.amber .val{color:#b7841f;}
+  .stat-card.ok .val{color:#2f7a53;}
 
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 16px; }
-  .panel-title { font-family:'Kanit'; font-weight: 600; font-size: 16px; margin-bottom: 2px; color: var(--hi); }
-  .panel-sub { color: var(--lo); font-size: 12px; margin-bottom: 16px; }
-  .chart-row { display:grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
-  .chart-row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .line-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(240px,1fr));
+    gap:1.1rem;
+  }
+  .line-card{
+    background:#fff;
+    border:1px solid #e3ddca;
+    border-radius:12px;
+    padding:1.2rem 1.3rem;
+    cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+  }
+  .line-card:hover{
+    border-color:var(--accent);
+    box-shadow:0 6px 18px rgba(0,0,0,.07);
+    transform:translateY(-1px);
+  }
+  .line-card-head{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;gap:.6rem;
+  }
+  .line-card-name{
+    display:flex;align-items:center;gap:.5rem;font-weight:600;font-size:1rem;color:#1c2027;
+  }
+  .line-card-name svg{width:18px;height:18px;color:var(--accent);flex:none;}
+  .line-card-count{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:#8a8267;flex:none;}
+  .line-bar{
+    height:6px;background:#efe9d8;border-radius:999px;overflow:hidden;margin-bottom:.9rem;
+  }
+  .line-bar-fill{height:100%;border-radius:999px;}
+  .line-card-badges{display:flex;gap:.4rem;flex-wrap:wrap;}
 
-  .tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space:nowrap; border: none; }
+  .dash-grid{
+    display:grid;
+    grid-template-columns:1.15fr .85fr;
+    gap:1.4rem;
+    align-items:start;
+  }
+  .panel-card{
+    background:#fff;
+    border:1px solid #e3ddca;
+    border-radius:12px;
+    padding:1.3rem 1.4rem;
+  }
+  .panel-card h3{font-size:1rem;margin:0 0 1rem;font-weight:600;}
 
-  .toolbar { display:flex; gap: 10px; margin-bottom: 14px; align-items:center; flex-wrap: wrap; }
-  .input, select.input { background: var(--surface); border: 1px solid var(--border); color: var(--hi); padding: 10px 12px; font-size: 13.5px; font-family:'Noto Sans Thai'; border-radius: 9px; transition: border-color .12s, box-shadow .12s; }
-  .input:focus, select.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
-  .search { flex: 1; min-width: 180px; }
-  table { width: 100%; border-collapse: collapse; }
-  thead th { text-align: left; color: var(--lo); font-weight: 600; font-size: 11px; padding: 12px 14px; background: var(--surface-alt); }
-  thead tr th:first-child { border-top-left-radius: var(--radius); }
-  thead tr th:last-child { border-top-right-radius: var(--radius); }
-  tbody td { padding: 13px 14px; border-bottom: 1px solid var(--border); font-size: 13.5px; vertical-align: middle; }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover { background: var(--surface-alt); }
-  .equip-name { font-weight: 600; }
-  .equip-note { color: var(--lo); font-size: 12px; margin-top: 3px; max-width: 260px; }
-  .row-actions { display:flex; gap: 6px; }
-  .icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--lo); font-size: 11.5px; font-weight: 500; padding: 5px 11px; cursor:pointer; border-radius: 7px; transition: all .12s; }
-  .icon-btn:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
-  .mono { font-family: 'IBM Plex Mono'; font-size: 12.5px; }
+  .gauge-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
+  .gauge-pct{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:2.4rem;
+    font-weight:700;
+  }
+  .gauge-label{font-size:.78rem;color:#8a8267;margin-top:.2rem;}
+  .gauge-legend{
+    display:flex;
+    gap:1rem;
+    margin-top:1.1rem;
+    font-size:.75rem;
+    color:#6e6754;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .gauge-legend span{display:flex;align-items:center;gap:.35rem;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
 
-  .empty { text-align:center; padding: 56px 20px; color: var(--lo); background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
-  .empty .headline { font-size: 18px; color: var(--hi); margin-bottom: 6px; }
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th{
+    text-align:left;
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:#8a8267;
+    padding:.5rem .6rem;
+    border-bottom:1px solid #e3ddca;
+  }
+  td{
+    padding:.65rem .6rem;
+    border-bottom:1px solid #efe9d8;
+    vertical-align:middle;
+  }
+  tr:last-child td{border-bottom:none;}
+  tr.row-click{cursor:pointer;}
+  tr.row-click:hover{background:#faf7ef;}
 
-  .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
-  .field { display:flex; flex-direction:column; gap: 7px; }
-  .field.full { grid-column: 1 / -1; }
-  .field label { font-size: 12px; color: var(--lo); font-weight: 500; }
-  textarea.input { resize: vertical; min-height: 80px; font-family:'Noto Sans Thai'; }
-  .form-actions { display:flex; gap: 10px; margin-top: 20px; justify-content:flex-end; }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    font-size:.72rem;
+    font-weight:600;
+    padding:.28rem .6rem;
+    border-radius:999px;
+  }
+  .badge .dot{width:6px;height:6px;}
+  .badge-ok{background:#e4f4ea;color:#2f7a53;}
+  .badge-duesoon{background:#fdf1dc;color:#a8721c;}
+  .badge-overdue{background:#fbe6e2;color:#b3402a;}
+  .badge-none{background:#eee9db;color:#7d765f;}
 
-  .toast { position: fixed; bottom: 24px; right: 28px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--teal); border-radius: 10px; box-shadow: var(--shadow); padding: 13px 20px; font-size: 13.5px; font-weight: 500; z-index: 50; }
-  .toast.err { border-left-color: var(--red); }
-  .loading-wrap { display:flex; align-items:center; justify-content:center; height: 60vh; width:100%; color: var(--lo); }
+  .toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1.1rem;
+    gap:1rem;
+    flex-wrap:wrap;
+  }
+  .search-box{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    background:#fff;
+    border:1px solid #e3ddca;
+    border-radius:8px;
+    padding:.5rem .8rem;
+    min-width:240px;
+  }
+  .search-box input{
+    border:none;outline:none;background:transparent;font-size:.85rem;width:100%;
+  }
+  .search-box svg{width:16px;height:16px;color:#9c8f6f;flex:none;}
 
-  .nav-badge { margin-left:auto; font-family:'IBM Plex Mono'; font-size: 10.5px; font-weight:700; color:#fff; background: var(--red); padding: 2px 7px; border-radius: 999px; }
+  .empty-state{
+    text-align:center;
+    padding:3rem 1rem;
+    color:#8a8267;
+  }
+  .empty-state .ico{width:40px;height:40px;margin:0 auto 1rem;color:#c7bfa3;}
+  .empty-state h4{margin:0 0 .3rem;color:#4a4536;font-size:.98rem;}
+  .empty-state p{margin:0 0 1.2rem;font-size:.85rem;}
 
-  .metric-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
-  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; position: relative; }
-  .metric-top { display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 4px; gap: 8px; }
-  .metric-label { color: var(--lo); font-size: 12.5px; font-weight: 500; }
-  .metric-status { font-size: 10.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space:nowrap; border: none; }
-  .metric-value { font-family:'Kanit'; font-weight: 700; font-size: 30px; line-height:1; margin: 8px 0 12px; }
-  .metric-desc { color: var(--lo); font-size: 11.5px; margin-top: 8px; line-height: 1.55; }
-  .progress-track { height: 7px; background: var(--surface-alt); border-radius: 999px; overflow:hidden; }
-  .progress-fill { height: 100%; border-radius: 999px; }
-  .metric-num-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  /* modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(20,23,28,.55);
+    display:flex;align-items:center;justify-content:center;
+    padding:1.5rem;z-index:50;
+  }
+  .modal{
+    background:#fff;border-radius:14px;
+    width:min(94vw,560px);
+    max-height:88vh;
+    overflow-y:auto;
+    padding:1.7rem 1.8rem 1.9rem;
+  }
+  .modal h2{font-size:1.15rem;margin:0 0 1.2rem;font-weight:600;color:#1c2027;}
+  .modal .field label{color:#8a8267;}
+  .modal .field input, .modal .field select, .modal .field textarea{
+    background:#faf8f2;border:1px solid #e3ddca;color:#1c2027;
+  }
+  .modal .field input:focus, .modal .field select:focus, .modal .field textarea:focus{
+    border-color:var(--accent);
+  }
+  .modal-actions{
+    display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.4rem;
+  }
+  .modal-close{
+    position:absolute;
+  }
+  .modal-head{
+    display:flex;justify-content:space-between;align-items:flex-start;
+  }
+  .icon-btn{
+    background:transparent;border:none;color:#9c8f6f;padding:.2rem;border-radius:6px;
+  }
+  .icon-btn:hover{color:#1c2027;background:#f1ecdd;}
+  .icon-btn svg{width:20px;height:20px;display:block;}
 
-  .alert-section-title { font-family:'Kanit'; font-weight:600; font-size: 15.5px; margin: 26px 0 12px; display:flex; align-items:center; gap: 8px; color: var(--hi); }
-  .alert-section-title:first-child { margin-top: 0; }
-  .alert-list { display:flex; flex-direction:column; gap: 9px; margin-bottom: 6px; }
-  .alert-item { display:flex; align-items:center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--red); border-radius: 10px; box-shadow: var(--shadow); padding: 13px 16px; }
-  .alert-item.warn { border-left-color: var(--amber); }
-  .alert-item.ok { border-left-color: var(--teal); }
-  .alert-main { flex: 1; min-width: 0; }
-  .alert-title { font-weight: 600; font-size: 13.5px; }
-  .alert-sub { color: var(--lo); font-size: 12px; margin-top: 3px; }
-  .alert-days { font-family:'IBM Plex Mono'; font-size: 12px; font-weight: 500; white-space: nowrap; }
-  .alert-empty { color: var(--lo); font-size: 13px; padding: 16px 4px; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; text-align:center; }
-  .schedule-toggle { display:flex; justify-content:flex-end; margin-bottom: 14px; }
+  /* machine detail */
+  .detail-head{
+    display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.6rem;flex-wrap:wrap;gap:1rem;
+  }
+  .machine-meta{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1rem;
+    margin-bottom:1.6rem;
+  }
+  .meta-item{
+    background:#fff;border:1px solid #e3ddca;border-radius:10px;padding:.9rem 1rem;
+  }
+  .meta-item .k{font-size:.72rem;color:#8a8267;margin-bottom:.25rem;}
+  .meta-item .v{font-size:.92rem;font-weight:600;}
 
-  @media (max-width: 880px) {
-    .app { flex-direction: column; }
-    .sidebar { width: 100%; flex-direction: row; overflow-x: auto; border-right:none; border-bottom:1px solid var(--border); padding: 10px 12px; gap: 6px; }
-    .sidebar-foot { display:none; }
-    .brand { display:none; }
-    .nav-item { flex-direction: column; gap: 4px; padding: 8px 12px; font-size: 11px; min-width: 68px; position: relative; }
-    .nav-count { display:none; }
-    .nav-badge { position: absolute; top: 2px; right: 6px; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .chart-row, .chart-row2 { grid-template-columns: 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
-    .metric-grid, .metric-num-grid { grid-template-columns: 1fr; }
-    .main { padding: 18px; }
-    .row-actions { opacity: 1 !important; }
-    .btn, .icon-btn { min-height: 38px; }
+  .timeline{
+    position:relative;
+    padding-left:1.6rem;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:#e3ddca;
+  }
+  .t-entry{
+    position:relative;
+    padding-bottom:1.4rem;
+  }
+  .t-entry:last-child{padding-bottom:0;}
+  .t-entry::before{
+    content:"";
+    position:absolute;left:-1.6rem;top:.3rem;
+    width:10px;height:10px;border-radius:50%;
+    background:var(--accent);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px #e3ddca;
+  }
+  .t-date{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:#8a8267;margin-bottom:.15rem;}
+  .t-title{font-weight:600;font-size:.92rem;margin-bottom:.15rem;}
+  .t-desc{font-size:.85rem;color:#4a4536;margin-bottom:.35rem;line-height:1.5;}
+  .t-tags{display:flex;gap:.5rem;flex-wrap:wrap;font-size:.74rem;color:#77705f;}
+  .t-tags span{background:#f1ecdd;padding:.2rem .55rem;border-radius:999px;}
+
+  @media (max-width:860px){
+    .app-shell{grid-template-columns:1fr;}
+    .sidebar{
+      flex-direction:row;
+      align-items:center;
+      overflow-x:auto;
+      padding:.8rem 1rem;
+    }
+    .sb-brand{margin-bottom:0;margin-right:.6rem;}
+    .sb-spacer{display:none;}
+    .sb-user{display:none;}
+    .nav-item{white-space:nowrap;}
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .dash-grid{grid-template-columns:1fr;}
+    .machine-meta{grid-template-columns:1fr;}
+    .main{padding:1.4rem 1.1rem 2.4rem;}
+    .field-row{grid-template-columns:1fr;}
   }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo, useCallback } = React;
-const {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
-} = Recharts;
+<script>
+/* ============================================================
+   ระบบบันทึกการซ่อมบำรุงเครื่องจักร
+   เก็บข้อมูลในหน่วยความจำระหว่างใช้งาน (ข้อมูลจะรีเซ็ตเมื่อรีเฟรชหน้า)
+   ============================================================ */
 
-const COLORS = {
-  bg: "#F5F7FA", surface: "#FFFFFF", surfaceAlt: "#F1F4F8",
-  border: "#E4E8EF", hi: "#1F2430", lo: "#68707D",
-  primary: "#2F6FED", amber: "#F59E0B", teal: "#16A34A", red: "#EF4444", blue: "#0EA5E9",
+const state = {
+  view: 'login',            // login | register | app
+  appView: 'dashboard',     // dashboard | machines | detail | lines | lineDetail
+  currentUser: null,
+  selectedMachineId: null,
+  selectedLine: null,
+  modal: null,               // null | 'add-machine' | 'edit-machine' | 'add-maintenance'
+  editTargetId: null,
+  searchTerm: '',
+  authError: '',
+  authNotice: '',
+  users: [
+    { username:'admin', password:'admin123', fullname:'ผู้ดูแลระบบ', role:'ผู้ดูแลระบบ', createdAt: Date.now() }
+  ],
+  machines: [
+    { id:'m1', code:'CNC-01', name:'เครื่องกลึง CNC เบอร์ 1', location:'โรงงาน A / ไลน์ผลิต 1', line:'ไลน์ผลิต 1', category:'เครื่องจักรกล', installDate:'2021-03-15', notes:'' },
+    { id:'m2', code:'CMP-02', name:'เครื่องอัดลม เบอร์ 2', location:'ห้องเครื่องอัดลม', line:'', category:'ระบบลมอัด', installDate:'2019-11-02', notes:'' },
+    { id:'m3', code:'CNV-05', name:'สายพานลำเลียง เบอร์ 5', location:'โรงงาน B / ไลน์บรรจุ', line:'ไลน์บรรจุ', category:'ระบบลำเลียง', installDate:'2022-06-20', notes:'' },
+    { id:'m4', code:'CNC-02', name:'เครื่องกลึง CNC เบอร์ 2', location:'โรงงาน A / ไลน์ผลิต 1', line:'ไลน์ผลิต 1', category:'เครื่องจักรกล', installDate:'2021-05-02', notes:'' },
+    { id:'m5', code:'WLD-01', name:'เครื่องเชื่อมอัตโนมัติ เบอร์ 1', location:'โรงงาน A / ไลน์ผลิต 2', line:'ไลน์ผลิต 2', category:'เครื่องจักรกล', installDate:'2020-09-18', notes:'' }
+  ],
+  maintenance: [
+    { id:'r1', machineId:'m1', date:'2026-07-10', type:'บำรุงรักษาตามระยะ', technician:'สมชาย ใจดี', description:'เปลี่ยนน้ำมันหล่อลื่นและตรวจสอบสปินเดิล', parts:'น้ำมันหล่อลื่น 2 ลิตร', cost:'1200', nextDueDate:'2026-10-10', notes:'' },
+    { id:'r2', machineId:'m2', date:'2026-06-01', type:'ซ่อมฉุกเฉิน', technician:'วิชัย มั่นคง', description:'เปลี่ยนวาล์วระบายที่รั่ว', parts:'วาล์วระบายแรงดัน x1', cost:'3500', nextDueDate:'2026-09-01', notes:'ตรวจพบเสียงดังผิดปกติก่อนซ่อม' },
+    { id:'r3', machineId:'m3', date:'2026-08-05', type:'ตรวจสอบตามระยะ', technician:'สมชาย ใจดี', description:'ตรวจสอบความตึงสายพานและมอเตอร์ขับ', parts:'-', cost:'0', nextDueDate:'2026-11-05', notes:'' },
+    { id:'r4', machineId:'m4', date:'2026-08-20', type:'บำรุงรักษาตามระยะ', technician:'สมชาย ใจดี', description:'เปลี่ยนน้ำมันหล่อลื่นและตรวจสอบสปินเดิล', parts:'น้ำมันหล่อลื่น 2 ลิตร', cost:'1200', nextDueDate:'2026-08-25', notes:'' },
+    { id:'r5', machineId:'m5', date:'2026-05-15', type:'บำรุงรักษาตามระยะ', technician:'วิชัย มั่นคง', description:'ตรวจสอบหัวเชื่อมและระบบป้อนลวด', parts:'หัวเชื่อม x2', cost:'800', nextDueDate:'2026-08-15', notes:'' }
+  ]
 };
 
-const TYPE_META = {
-  preventive: { label: "ป้องกัน", color: COLORS.teal },
-  corrective: { label: "แก้ไข", color: COLORS.blue },
-  emergency: { label: "ฉุกเฉิน", color: COLORS.red },
-};
-const STATUS_META = {
-  completed: { label: "เสร็จสิ้น", color: COLORS.teal },
-  pending: { label: "รอดำเนินการ", color: COLORS.amber },
-  overdue: { label: "เกินกำหนด", color: COLORS.red },
-};
-const PRIORITY_META = {
-  low: { label: "ต่ำ", color: COLORS.lo },
-  medium: { label: "ปานกลาง", color: COLORS.amber },
-  high: { label: "สูง", color: COLORS.red },
-};
+// ---------- helpers ----------
+function uid(){ return 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(str){
+  return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(d){
+  if(!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  if(isNaN(dt)) return d;
+  return dt.toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' });
+}
+function fmtCost(c){
+  const n = parseFloat(c);
+  if(isNaN(n)) return '—';
+  return n.toLocaleString('th-TH', {minimumFractionDigits:0}) + ' บาท';
+}
+function todayISO(){
+  const t = new Date();
+  return t.toISOString().slice(0,10);
+}
 
-const STORAGE_KEY = "maintlog_records_v1";
-const SCHEDULE_KEY = "maintlog_schedules_v1";
-const uid = () => Math.random().toString(36).slice(2, 10);
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const fmtTHB = (n) => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(n || 0);
-const fmtMonth = (iso) => new Date(iso).toLocaleDateString("th-TH", { month: "short", year: "2-digit" });
-const fmtDateTH = (iso) => new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
-const daysBetween = (fromISO, toISO) => Math.round((new Date(toISO) - new Date(fromISO)) / (1000 * 60 * 60 * 24));
-const addDays = (iso, n) => {
-  const d = new Date(iso);
-  d.setDate(d.getDate() + Number(n));
-  return d.toISOString().slice(0, 10);
-};
+function machineRecords(machineId){
+  return state.maintenance
+    .filter(r => r.machineId === machineId)
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
+}
 
-const SEED = [
-  { id: uid(), equipment: "คอมเพรสเซอร์ #1", type: "preventive", date: "2026-06-12", technician: "สมชาย ใจดี", cost: 3500, downtime: 1.5, priority: "low", status: "completed", note: "เปลี่ยนไส้กรองอากาศ ตรวจแรงดัน" },
-  { id: uid(), equipment: "สายพานลำเลียง A", type: "corrective", date: "2026-06-20", technician: "วิชัย พรหมมา", cost: 8200, downtime: 4, priority: "medium", status: "completed", note: "เปลี่ยนลูกปืนที่ชำรุด" },
-  { id: uid(), equipment: "หม้อแปลงไฟฟ้า", type: "emergency", date: "2026-07-02", technician: "ประยุทธ ศรีสุข", cost: 22000, downtime: 9, priority: "high", status: "completed", note: "ฉนวนไหม้ ต้องเปลี่ยนชุดขดลวด" },
-  { id: uid(), equipment: "เครื่อง CNC #2", type: "preventive", date: "2026-07-10", technician: "สมชาย ใจดี", cost: 1800, downtime: 1, priority: "low", status: "completed", note: "หล่อลื่นราง ตรวจสอบความแม่นยำ" },
-  { id: uid(), equipment: "ปั๊มน้ำหล่อเย็น", type: "corrective", date: "2026-07-18", technician: "อนุชา ทองดี", cost: 5400, downtime: 3, priority: "medium", status: "pending", note: "รอ seal ใหม่จากซัพพลายเออร์" },
-  { id: uid(), equipment: "คอมเพรสเซอร์ #1", type: "preventive", date: "2026-08-01", technician: "วิชัย พรหมมา", cost: 3600, downtime: 1.5, priority: "low", status: "completed", note: "รอบตรวจประจำเดือน" },
-  { id: uid(), equipment: "สายพานลำเลียง B", type: "emergency", date: "2026-08-14", technician: "ประยุทธ ศรีสุข", cost: 14500, downtime: 6, priority: "high", status: "overdue", note: "มอเตอร์ไหม้ ต้องสั่งอะไหล่ด่วน" },
-  { id: uid(), equipment: "เครื่อง CNC #1", type: "corrective", date: "2026-08-20", technician: "สมชาย ใจดี", cost: 6700, downtime: 2.5, priority: "medium", status: "completed", note: "ปรับตั้งแกน spindle" },
-];
+function machineStatus(machineId){
+  const recs = machineRecords(machineId);
+  if(recs.length === 0) return { label:'ยังไม่มีประวัติ', cls:'none' };
+  const latest = recs[0];
+  if(!latest.nextDueDate) return { label:'ไม่ได้กำหนดรอบถัดไป', cls:'none' };
+  const diffDays = Math.floor((new Date(latest.nextDueDate) - new Date(todayISO())) / 86400000);
+  if(diffDays < 0) return { label:'เกินกำหนด', cls:'overdue', diffDays };
+  if(diffDays <= 7) return { label:'ใกล้ครบกำหนด', cls:'duesoon', diffDays };
+  return { label:'ปกติ', cls:'ok', diffDays };
+}
 
-const SEED_SCHEDULES = [
-  { id: uid(), equipment: "คอมเพรสเซอร์ #1", nextDate: "2026-09-05", intervalDays: 30, note: "ตรวจสอบระบบอัดอากาศและเปลี่ยนไส้กรองประจำเดือน" },
-  { id: uid(), equipment: "หม้อแปลงไฟฟ้า", nextDate: "2026-09-01", intervalDays: 90, note: "ตรวจสภาพฉนวนและขดลวดหลังซ่อมฉุกเฉิน" },
-  { id: uid(), equipment: "สายพานลำเลียง B", nextDate: "2026-08-29", intervalDays: 14, note: "ติดตามผลการเปลี่ยนมอเตอร์ใหม่" },
-];
+function badgeHtml(status){
+  return `<span class="badge badge-${status.cls}"><span class="dot" style="background:currentColor"></span>${status.label}</span>`;
+}
 
-const NAV_ICONS = {
-  dashboard: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="12" width="4" height="8" /><rect x="10" y="7" width="4" height="13" /><rect x="16" y="3" width="4" height="17" />
-    </svg>
-  ),
-  kpi: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="13" r="8" /><path d="M12 13l4-4" /><path d="M9 3h6" />
-    </svg>
-  ),
-  alerts: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 01-3.4 0" />
-    </svg>
-  ),
-  records: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" />
-    </svg>
-  ),
-  new: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" /><path d="M12 8v8" /><path d="M8 12h8" />
-    </svg>
-  ),
+// ---------- icons ----------
+const ICONS = {
+  gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2.06 2.06 0 1 1-2.92 2.92l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V19.9a2.06 2.06 0 1 1-4.12 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2.06 2.06 0 1 1-2.92-2.92l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H2.1a2.06 2.06 0 1 1 0-4.12h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2.06 2.06 0 1 1 2.92-2.92l.06.06a1.7 1.7 0 0 0 1.87.34H8.3a1.7 1.7 0 0 0 1.03-1.56V2.1a2.06 2.06 0 1 1 4.12 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2.06 2.06 0 1 1 2.92 2.92l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.56 1.03h.09a2.06 2.06 0 1 1 0 4.12h-.09a1.7 1.7 0 0 0-1.56 1.03Z"/></svg>`,
+  dash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>`,
+  list: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="4.5" cy="6" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="18" r="1.4"/><path d="M9 6h11M9 12h11M9 18h11"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>`,
+  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`,
+  close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+  back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m15 18-6-6 6-6"/></svg>`,
+  wrench: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.2-2.2 2.8-2.4Z"/></svg>`,
+  empty: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3h8l4 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8l4-5Z"/><path d="M8 3v5H4"/></svg>`,
+  layers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/><path d="m3 18 9 5 9-5"/></svg>`
 };
 
-function Bracket({ children, className = "" }) {
-  return (
-    <div className={`bracket ${className}`}>
-      <span className="bk bk-tl" /><span className="bk bk-tr" />
-      <span className="bk bk-bl" /><span className="bk bk-br" />
-      {children}
+// ---------- render root ----------
+function render(){
+  const root = document.getElementById('root');
+  if(state.view === 'login') root.innerHTML = renderLogin();
+  else if(state.view === 'register') root.innerHTML = renderRegister();
+  else root.innerHTML = renderApp();
+  if(state.modal) renderModal();
+}
+
+// ================= AUTH VIEWS =================
+function renderLogin(){
+  return `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="gear-mark">${ICONS.gear}</div>
+        <div class="name">MAINTAIN.LOG<small>ระบบบันทึกการซ่อมบำรุงเครื่องจักร</small></div>
+      </div>
+      <h1>เข้าสู่ระบบ</h1>
+      <p class="lede">กรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าใช้งานระบบบันทึกการซ่อมบำรุง</p>
+      ${state.authError ? `<div class="form-error">${esc(state.authError)}</div>` : ''}
+      ${state.authNotice ? `<div class="form-success">${esc(state.authNotice)}</div>` : ''}
+      <form onsubmit="return handleLogin(event)">
+        <div class="field">
+          <label>ชื่อผู้ใช้</label>
+          <input type="text" id="login-username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label>รหัสผ่าน</label>
+          <input type="password" id="login-password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">เข้าสู่ระบบ</button>
+      </form>
+      <div class="switch-line">ยังไม่มีบัญชี? <a onclick="goRegister()">สร้างบัญชีใหม่</a></div>
     </div>
-  );
-}
-function Tag({ meta }) {
-  return <span className="tag" style={{ color: meta.color, background: meta.color + "1A" }}>{meta.label}</span>;
-}
-function KPI({ label, value, sub, accent }) {
-  return (
-    <Bracket className="kpi">
-      <div className="kpi-label">{label}</div>
-      <div className="kpi-value" style={accent ? { color: accent } : undefined}>{value}</div>
-      {sub && <div className="kpi-sub">{sub}</div>}
-    </Bracket>
-  );
+  </div>`;
 }
 
-function loadRecords() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return SEED;
+function renderRegister(){
+  return `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="gear-mark">${ICONS.gear}</div>
+        <div class="name">MAINTAIN.LOG<small>ระบบบันทึกการซ่อมบำรุงเครื่องจักร</small></div>
+      </div>
+      <h1>สร้างบัญชีใหม่</h1>
+      <p class="lede">กรอกข้อมูลเพื่อสร้างบัญชีสำหรับเข้าใช้งานระบบ</p>
+      ${state.authError ? `<div class="form-error">${esc(state.authError)}</div>` : ''}
+      <form onsubmit="return handleRegister(event)">
+        <div class="field">
+          <label>ชื่อ-นามสกุล</label>
+          <input type="text" id="reg-fullname" required>
+        </div>
+        <div class="field">
+          <label>ตำแหน่ง</label>
+          <select id="reg-role">
+            <option>ช่างเทคนิค</option>
+            <option>หัวหน้างานซ่อมบำรุง</option>
+            <option>ผู้ดูแลระบบ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>ชื่อผู้ใช้</label>
+          <input type="text" id="reg-username" autocomplete="username" required>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>รหัสผ่าน</label>
+            <input type="password" id="reg-password" autocomplete="new-password" required>
+          </div>
+          <div class="field">
+            <label>ยืนยันรหัสผ่าน</label>
+            <input type="password" id="reg-password2" autocomplete="new-password" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">สร้างบัญชี</button>
+      </form>
+      <div class="switch-line">มีบัญชีอยู่แล้ว? <a onclick="goLogin()">เข้าสู่ระบบ</a></div>
+    </div>
+  </div>`;
 }
-function saveRecords(records) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-    return true;
-  } catch (e) {
+
+function goRegister(){ state.authError=''; state.authNotice=''; state.view='register'; render(); }
+function goLogin(){ state.authError=''; state.view='login'; render(); }
+
+function handleLogin(e){
+  e.preventDefault();
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value;
+  const found = state.users.find(x => x.username === u && x.password === p);
+  if(!found){
+    state.authError = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    render();
     return false;
   }
+  state.currentUser = found;
+  state.authError='';
+  state.authNotice='';
+  state.view='app';
+  state.appView='dashboard';
+  render();
+  return false;
 }
 
-function loadSchedules() {
-  try {
-    const raw = localStorage.getItem(SCHEDULE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return SEED_SCHEDULES;
-}
-function saveSchedules(schedules) {
-  try {
-    localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedules));
-    return true;
-  } catch (e) {
-    return false;
+function handleRegister(e){
+  e.preventDefault();
+  const fullname = document.getElementById('reg-fullname').value.trim();
+  const role = document.getElementById('reg-role').value;
+  const username = document.getElementById('reg-username').value.trim();
+  const pw1 = document.getElementById('reg-password').value;
+  const pw2 = document.getElementById('reg-password2').value;
+
+  if(state.users.some(x => x.username.toLowerCase() === username.toLowerCase())){
+    state.authError = 'มีชื่อผู้ใช้นี้อยู่แล้ว กรุณาเลือกชื่ออื่น';
+    render(); return false;
   }
-}
-
-function App() {
-  const [records, setRecords] = useState(null);
-  const [schedules, setSchedules] = useState(null);
-  const [tab, setTab] = useState("dashboard");
-  const [query, setQuery] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [editing, setEditing] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  useEffect(() => { setRecords(loadRecords()); setSchedules(loadSchedules()); }, []);
-
-  const showToast = (msg, isError = false) => {
-    setToast({ msg, isError });
-    setTimeout(() => setToast(null), 2600);
-  };
-
-  const persist = useCallback((next) => {
-    setRecords(next);
-    const ok = saveRecords(next);
-    if (!ok) showToast("บันทึกไม่สำเร็จ พื้นที่จัดเก็บอาจเต็ม", true);
-  }, []);
-
-  const persistSchedules = useCallback((next) => {
-    setSchedules(next);
-    const ok = saveSchedules(next);
-    if (!ok) showToast("บันทึกไม่สำเร็จ พื้นที่จัดเก็บอาจเต็ม", true);
-  }, []);
-
-  const saveSchedule = (sc) => {
-    if (!schedules) return;
-    let next;
-    if (sc.id && schedules.some((s) => s.id === sc.id)) {
-      next = schedules.map((s) => (s.id === sc.id ? sc : s));
-      showToast("แก้ไขการแจ้งเตือนแล้ว");
-    } else {
-      next = [{ ...sc, id: uid() }, ...schedules];
-      showToast("ตั้งการแจ้งเตือนใหม่แล้ว");
-    }
-    persistSchedules(next);
-  };
-
-  const deleteSchedule = (id) => {
-    if (!schedules) return;
-    persistSchedules(schedules.filter((s) => s.id !== id));
-    showToast("ลบการแจ้งเตือนแล้ว");
-  };
-
-  const completeSchedule = (sc) => {
-    if (!schedules) return;
-    if (sc.intervalDays && Number(sc.intervalDays) > 0) {
-      const next = schedules.map((s) =>
-        s.id === sc.id ? { ...s, nextDate: addDays(todayISO(), Number(sc.intervalDays)) } : s
-      );
-      persistSchedules(next);
-      showToast("เลื่อนรอบแจ้งเตือนถัดไปแล้ว");
-    } else {
-      persistSchedules(schedules.filter((s) => s.id !== sc.id));
-      showToast("ทำเครื่องหมายเสร็จสิ้นแล้ว");
-    }
-  };
-
-  const saveRecord = (rec) => {
-    if (!records) return;
-    let next;
-    if (rec.id && records.some((r) => r.id === rec.id)) {
-      next = records.map((r) => (r.id === rec.id ? rec : r));
-      showToast("แก้ไขรายการเรียบร้อย");
-    } else {
-      next = [{ ...rec, id: uid() }, ...records];
-      showToast("บันทึกรายการใหม่แล้ว");
-    }
-    persist(next);
-    setEditing(null);
-    setTab("records");
-  };
-
-  const deleteRecord = (id) => {
-    if (!records) return;
-    persist(records.filter((r) => r.id !== id));
-    showToast("ลบรายการแล้ว");
-  };
-
-  const filtered = useMemo(() => {
-    if (!records) return [];
-    return records
-      .filter((r) => (filterType === "all" ? true : r.type === filterType))
-      .filter((r) => (filterStatus === "all" ? true : r.status === filterStatus))
-      .filter((r) => {
-        if (!query.trim()) return true;
-        const q = query.toLowerCase();
-        return r.equipment.toLowerCase().includes(q) || r.technician.toLowerCase().includes(q) || (r.note || "").toLowerCase().includes(q);
-      })
-      .sort((a, b) => (a.date < b.date ? 1 : -1));
-  }, [records, query, filterType, filterStatus]);
-
-  const stats = useMemo(() => {
-    if (!records || records.length === 0) return null;
-    const totalCost = records.reduce((s, r) => s + Number(r.cost || 0), 0);
-    const totalDowntime = records.reduce((s, r) => s + Number(r.downtime || 0), 0);
-    const overdue = records.filter((r) => r.status === "overdue").length;
-    const emergency = records.filter((r) => r.type === "emergency").length;
-
-    const byMonth = {};
-    records.forEach((r) => {
-      const key = r.date.slice(0, 7);
-      byMonth[key] = byMonth[key] || { month: key, cost: 0, count: 0 };
-      byMonth[key].cost += Number(r.cost || 0);
-      byMonth[key].count += 1;
-    });
-    const trend = Object.values(byMonth).sort((a, b) => (a.month > b.month ? 1 : -1)).map((d) => ({ ...d, label: fmtMonth(d.month + "-01") }));
-
-    const byType = Object.keys(TYPE_META).map((t) => ({
-      name: TYPE_META[t].label, value: records.filter((r) => r.type === t).length, color: TYPE_META[t].color,
-    })).filter((d) => d.value > 0);
-
-    const byEquipMap = {};
-    records.forEach((r) => {
-      byEquipMap[r.equipment] = byEquipMap[r.equipment] || { equipment: r.equipment, cost: 0, downtime: 0, count: 0 };
-      byEquipMap[r.equipment].cost += Number(r.cost || 0);
-      byEquipMap[r.equipment].downtime += Number(r.downtime || 0);
-      byEquipMap[r.equipment].count += 1;
-    });
-    const byEquip = Object.values(byEquipMap).sort((a, b) => b.cost - a.cost).slice(0, 8);
-
-    const byStatus = Object.keys(STATUS_META).map((s) => ({
-      name: STATUS_META[s].label, value: records.filter((r) => r.status === s).length, color: STATUS_META[s].color,
-    })).filter((d) => d.value > 0);
-
-    // ---- KPI / performance metrics ----
-    const total = records.length;
-    const completed = records.filter((r) => r.status === "completed").length;
-    const preventiveCount = records.filter((r) => r.type === "preventive").length;
-
-    const pmRatioPct = total ? (preventiveCount / total) * 100 : 0;
-    const emergencyRatePct = total ? (emergency / total) * 100 : 0;
-    const onTimeRatePct = total ? (completed / total) * 100 : 0;
-    const overdueRatePct = total ? (overdue / total) * 100 : 0;
-    const mttrHours = total ? totalDowntime / total : 0;
-    const avgCostPerJob = total ? totalCost / total : 0;
-
-    const sortedDates = records.map((r) => r.date).sort();
-    const periodDays = Math.max(1, daysBetween(sortedDates[0], sortedDates[sortedDates.length - 1]) + 1);
-    const equipCount = Object.keys(byEquipMap).length || 1;
-    const totalPossibleHours = periodDays * 24 * equipCount;
-    const availabilityPct = totalPossibleHours > 0
-      ? Math.max(0, Math.min(100, ((totalPossibleHours - totalDowntime) / totalPossibleHours) * 100))
-      : 100;
-
-    const failureDatesByEquip = {};
-    records.forEach((r) => {
-      if (r.type === "corrective" || r.type === "emergency") {
-        failureDatesByEquip[r.equipment] = failureDatesByEquip[r.equipment] || [];
-        failureDatesByEquip[r.equipment].push(r.date);
-      }
-    });
-    const mtbfSamples = [];
-    Object.values(failureDatesByEquip).forEach((arr) => {
-      if (arr.length >= 2) {
-        const sorted = arr.slice().sort();
-        for (let i = 1; i < sorted.length; i++) mtbfSamples.push(daysBetween(sorted[i - 1], sorted[i]));
-      }
-    });
-    const mtbfDays = mtbfSamples.length ? mtbfSamples.reduce((a, b) => a + b, 0) / mtbfSamples.length : null;
-
-    const kpi = { pmRatioPct, emergencyRatePct, onTimeRatePct, overdueRatePct, mttrHours, avgCostPerJob, availabilityPct, mtbfDays, periodDays };
-
-    return { totalCost, totalDowntime, overdue, emergency, trend, byType, byEquip, byStatus, count: records.length, kpi };
-  }, [records]);
-
-  const alerts = useMemo(() => {
-    if (!records) return null;
-    const today = todayISO();
-    const overdueRecords = records.filter((r) => r.status === "overdue").sort((a, b) => (a.date < b.date ? -1 : 1));
-    const withDays = (schedules || []).map((s) => ({ ...s, daysLeft: daysBetween(today, s.nextDate) }));
-    const overdueSchedules = withDays.filter((s) => s.daysLeft < 0).sort((a, b) => a.daysLeft - b.daysLeft);
-    const dueSoonSchedules = withDays.filter((s) => s.daysLeft >= 0 && s.daysLeft <= 7).sort((a, b) => a.daysLeft - b.daysLeft);
-    const upcomingSchedules = withDays.filter((s) => s.daysLeft > 7).sort((a, b) => a.daysLeft - b.daysLeft);
-    const badgeCount = overdueRecords.length + overdueSchedules.length + dueSoonSchedules.length;
-    return { overdueRecords, overdueSchedules, dueSoonSchedules, upcomingSchedules, badgeCount };
-  }, [records, schedules]);
-
-  return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark"><span className="brand-dot" /><span className="brand-title">MAINTLOG</span></div>
-          <div className="brand-sub">ระบบบันทึกการซ่อมบำรุง</div>
-        </div>
-        {[
-          ["dashboard", "ภาพรวมและวิเคราะห์ข้อมูล"],
-          ["kpi", "ตัวชี้วัดประสิทธิภาพ"],
-          ["alerts", "แจ้งเตือนซ่อมบำรุง"],
-          ["records", "รายการซ่อมบำรุง"],
-          ["new", "บันทึกรายการใหม่"],
-        ].map(([key, label]) => (
-          <div key={key} className={`nav-item ${tab === key ? "active" : ""}`}
-               onClick={() => { setTab(key); if (key === "new") setEditing({}); }}>
-            <span className="nav-ico">{NAV_ICONS[key]}</span>
-            <span>{label}</span>
-            {key === "records" && <span className="nav-count">{records ? records.length : "–"}</span>}
-            {key === "alerts" && alerts && alerts.badgeCount > 0 && <span className="nav-badge">{alerts.badgeCount}</span>}
-          </div>
-        ))}
-        <div className="sidebar-foot">ข้อมูลจัดเก็บในเบราว์เซอร์นี้เท่านั้น<br />(localStorage ของเครื่อง)</div>
-      </aside>
-
-      <main className="main">
-        {!records ? (
-          <div className="loading-wrap">กำลังโหลดข้อมูล…</div>
-        ) : tab === "dashboard" ? (
-          <Dashboard stats={stats} onNew={() => { setEditing({}); setTab("new"); }} />
-        ) : tab === "kpi" ? (
-          <KpiPage stats={stats} />
-        ) : tab === "alerts" ? (
-          <AlertsPage
-            alerts={alerts}
-            records={records}
-            onCompleteSchedule={completeSchedule}
-            onDeleteSchedule={deleteSchedule}
-            onSaveSchedule={saveSchedule}
-            onGoToRecord={(r) => { setEditing(r); setTab("new"); }}
-          />
-        ) : tab === "records" ? (
-          <Records
-            filtered={filtered} query={query} setQuery={setQuery}
-            filterType={filterType} setFilterType={setFilterType}
-            filterStatus={filterStatus} setFilterStatus={setFilterStatus}
-            onEdit={(r) => { setEditing(r); setTab("new"); }}
-            onDelete={deleteRecord}
-            onNew={() => { setEditing({}); setTab("new"); }}
-            total={records.length}
-          />
-        ) : (
-          <RecordForm initial={editing} onCancel={() => setTab("records")} onSave={saveRecord} />
-        )}
-      </main>
-
-      {toast && <div className={`toast ${toast.isError ? "err" : ""}`}>{toast.msg}</div>}
-    </div>
-  );
-}
-
-function Dashboard({ stats, onNew }) {
-  if (!stats) {
-    return (
-      <div className="empty">
-        <div className="headline">ยังไม่มีข้อมูล</div>
-        <div style={{ marginBottom: 16 }}>เริ่มบันทึกรายการซ่อมบำรุงเพื่อดูการวิเคราะห์ข้อมูล</div>
-        <button className="btn" onClick={onNew}>+ บันทึกรายการแรก</button>
-      </div>
-    );
+  if(pw1.length < 6){
+    state.authError = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+    render(); return false;
   }
-  return (
-    <div>
-      <div className="page-head">
-        <div>
-          <div className="page-title">ภาพรวมและวิเคราะห์ข้อมูล</div>
-          <div className="page-desc">สรุปสถานะการซ่อมบำรุงทั้งหมด {stats.count} รายการ</div>
-        </div>
-        <button className="btn" onClick={onNew}>+ บันทึกรายการใหม่</button>
-      </div>
-
-      <div className="kpi-grid">
-        <KPI label="ค่าใช้จ่ายรวม" value={fmtTHB(stats.totalCost)} sub={`${stats.count} รายการ`} />
-        <KPI label="เวลาหยุดเครื่องรวม" value={`${stats.totalDowntime.toFixed(1)} ชม.`} sub="ทุกอุปกรณ์" />
-        <KPI label="งานเกินกำหนด" value={stats.overdue} accent={stats.overdue > 0 ? COLORS.red : undefined} sub="ต้องติดตามด่วน" />
-        <KPI label="ซ่อมฉุกเฉิน" value={stats.emergency} accent={stats.emergency > 0 ? COLORS.amber : undefined} sub="ไม่ได้วางแผนล่วงหน้า" />
-      </div>
-
-      <div className="chart-row">
-        <div className="panel">
-          <div className="panel-title">แนวโน้มค่าใช้จ่ายรายเดือน</div>
-          <div className="panel-sub">ยอดค่าซ่อมบำรุงตามช่วงเวลา</div>
-          <ResponsiveContainer width="100%" height={230}>
-            <LineChart data={stats.trend} margin={{ left: -12, right: 8 }}>
-              <CartesianGrid stroke={COLORS.border} vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={{ stroke: COLORS.border }} tickLine={false} />
-              <YAxis tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} labelStyle={{ color: COLORS.hi }} formatter={(v) => [fmtTHB(v), "ค่าใช้จ่าย"]} />
-              <Line type="monotone" dataKey="cost" stroke={COLORS.primary} strokeWidth={2.5} dot={{ r: 3, fill: COLORS.primary }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="panel">
-          <div className="panel-title">ประเภทงานซ่อม</div>
-          <div className="panel-sub">สัดส่วนตามประเภท</div>
-          <ResponsiveContainer width="100%" height={230}>
-            <PieChart>
-              <Pie data={stats.byType} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={2} stroke="none">
-                {stats.byType.map((d, i) => <Cell key={i} fill={d.color} />)}
-              </Pie>
-              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} />
-              <Legend verticalAlign="bottom" height={30} formatter={(val) => <span style={{ color: COLORS.lo, fontSize: 11.5 }}>{val}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="chart-row2">
-        <div className="panel">
-          <div className="panel-title">ค่าใช้จ่ายตามอุปกรณ์</div>
-          <div className="panel-sub">อุปกรณ์ที่มีค่าซ่อมบำรุงสูงสุด</div>
-          <ResponsiveContainer width="100%" height={Math.max(200, stats.byEquip.length * 34)}>
-            <BarChart data={stats.byEquip} layout="vertical" margin={{ left: 8, right: 20 }}>
-              <CartesianGrid stroke={COLORS.border} horizontal={false} />
-              <XAxis type="number" tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <YAxis type="category" dataKey="equipment" tick={{ fill: COLORS.hi, fontSize: 11.5 }} axisLine={false} tickLine={false} width={120} />
-              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} formatter={(v) => [fmtTHB(v), "ค่าใช้จ่าย"]} cursor={{ fill: COLORS.surfaceAlt }} />
-              <Bar dataKey="cost" fill={COLORS.blue} radius={[0, 4, 4, 0]} barSize={14} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="panel">
-          <div className="panel-title">สถานะงานซ่อมบำรุง</div>
-          <div className="panel-sub">จำนวนรายการตามสถานะปัจจุบัน</div>
-          <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={stats.byStatus} margin={{ left: -12, right: 8 }}>
-              <CartesianGrid stroke={COLORS.border} vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: COLORS.lo, fontSize: 11.5 }} axisLine={{ stroke: COLORS.border }} tickLine={false} />
-              <YAxis tick={{ fill: COLORS.lo, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, fontSize: 12.5, borderRadius: 10, boxShadow: "0 4px 14px rgba(16,24,40,.10)" }} cursor={{ fill: COLORS.surfaceAlt }} />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={38}>
-                {stats.byStatus.map((d, i) => <Cell key={i} fill={d.color} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function metricColor(value, good, warn, invert) {
-  if (invert) {
-    if (value <= good) return COLORS.teal;
-    if (value <= warn) return COLORS.amber;
-    return COLORS.red;
+  if(pw1 !== pw2){
+    state.authError = 'รหัสผ่านทั้งสองช่องไม่ตรงกัน';
+    render(); return false;
   }
-  if (value >= good) return COLORS.teal;
-  if (value >= warn) return COLORS.amber;
-  return COLORS.red;
-}
-function metricStatusLabel(color) {
-  if (color === COLORS.teal) return "ดี";
-  if (color === COLORS.amber) return "เฝ้าระวัง";
-  return "ต้องปรับปรุง";
+  state.users.push({ username, password:pw1, fullname, role, createdAt:Date.now() });
+  state.authError='';
+  state.authNotice='สร้างบัญชีสำเร็จ กรุณาเข้าสู่ระบบ';
+  state.view='login';
+  render();
+  return false;
 }
 
-function MetricCard({ label, valueText, pct, color, desc }) {
-  return (
-    <div className="metric-card">
-      <div className="metric-top">
-        <div className="metric-label">{label}</div>
-        <span className="metric-status" style={{ color, borderColor: color + "55", background: color + "14" }}>{metricStatusLabel(color)}</span>
-      </div>
-      <div className="metric-value" style={{ color }}>{valueText}</div>
-      <div className="progress-track"><div className="progress-fill" style={{ width: `${Math.max(2, Math.min(100, pct))}%`, background: color }} /></div>
-      <div className="metric-desc">{desc}</div>
+function logout(){
+  state.currentUser = null;
+  state.view='login';
+  state.appView='dashboard';
+  render();
+}
+
+// ================= APP SHELL =================
+function renderApp(){
+  return `
+  <div class="app-shell">
+    ${renderSidebar()}
+    <div class="main">
+      ${state.appView === 'dashboard' ? renderDashboard() : ''}
+      ${state.appView === 'machines' ? renderMachines() : ''}
+      ${state.appView === 'detail' ? renderDetail() : ''}
+      ${state.appView === 'lines' ? renderLinesOverview() : ''}
+      ${state.appView === 'lineDetail' ? renderLineDetail() : ''}
     </div>
-  );
+  </div>`;
 }
 
-function KpiPage({ stats }) {
-  if (!stats) {
-    return (
-      <div className="empty">
-        <div className="headline">ยังไม่มีข้อมูล</div>
-        <div>บันทึกรายการซ่อมบำรุงเพื่อคำนวณตัวชี้วัดประสิทธิภาพ</div>
+function renderSidebar(){
+  const u = state.currentUser;
+  return `
+  <div class="sidebar">
+    <div class="sb-brand">
+      <div class="gear-mark">${ICONS.gear}</div>
+      <div class="name">MAINTAIN.LOG</div>
+    </div>
+    <button class="nav-item ${state.appView==='dashboard'?'active':''}" onclick="goto('dashboard')">${ICONS.dash} ภาพรวม</button>
+    <button class="nav-item ${state.appView==='machines'||state.appView==='detail'?'active':''}" onclick="goto('machines')">${ICONS.list} เครื่องจักรทั้งหมด</button>
+    <button class="nav-item ${state.appView==='lines'||state.appView==='lineDetail'?'active':''}" onclick="goto('lines')">${ICONS.layers} ไลน์การผลิต</button>
+    <button class="nav-item" onclick="openModal('add-machine')">${ICONS.plus} เพิ่มเครื่องจักรใหม่</button>
+    <div class="sb-spacer"></div>
+    <div class="sb-user">
+      <div class="who">${esc(u.fullname || u.username)}</div>
+      <div class="role">${esc(u.role || '')}</div>
+      <button onclick="logout()">ออกจากระบบ</button>
+    </div>
+  </div>`;
+}
+
+function goto(view){
+  state.appView = view;
+  state.selectedMachineId = null;
+  state.selectedLine = null;
+  state.searchTerm = '';
+  render();
+}
+
+// ================= DASHBOARD =================
+function renderDashboard(){
+  const total = state.machines.length;
+  let overdue=0, duesoon=0, ok=0, none=0;
+  state.machines.forEach(m => {
+    const s = machineStatus(m.id);
+    if(s.cls==='overdue') overdue++;
+    else if(s.cls==='duesoon') duesoon++;
+    else if(s.cls==='ok') ok++;
+    else none++;
+  });
+  const healthPct = total ? Math.round((ok/total)*100) : 0;
+
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const doneThisMonth = state.maintenance.filter(r => r.date && r.date.startsWith(thisMonth)).length;
+
+  const recent = [...state.maintenance].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,6);
+
+  // gauge svg
+  const r = 54, c = 2*Math.PI*r;
+  const offset = c - (healthPct/100)*c;
+  const gaugeColor = healthPct >= 70 ? '#2f7a53' : healthPct >= 40 ? '#b7841f' : '#b3402a';
+
+  return `
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">ภาพรวมระบบ</div>
+        <h1>สวัสดี, ${esc((state.currentUser.fullname||'').split(' ')[0] || state.currentUser.username)}</h1>
+        <div class="sub">สรุปสถานะการซ่อมบำรุงเครื่องจักรทั้งหมดในระบบ</div>
       </div>
-    );
+      <button class="btn btn-primary" onclick="openModal('add-machine')">${ICONS.plus} เพิ่มเครื่องจักรใหม่</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="lbl">เครื่องจักรทั้งหมด</div><div class="val">${total}</div></div>
+      <div class="stat-card warn"><div class="lbl">เกินกำหนดบำรุงรักษา</div><div class="val">${overdue}</div></div>
+      <div class="stat-card amber"><div class="lbl">ใกล้ครบกำหนด (7 วัน)</div><div class="val">${duesoon}</div></div>
+      <div class="stat-card ok"><div class="lbl">บันทึกซ่อมบำรุงเดือนนี้</div><div class="val">${doneThisMonth}</div></div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="panel-card">
+        <h3>รายการที่เพิ่งบันทึกล่าสุด</h3>
+        ${recent.length === 0 ? `
+          <div class="empty-state">
+            <div class="ico">${ICONS.empty}</div>
+            <h4>ยังไม่มีประวัติการซ่อมบำรุง</h4>
+            <p>เพิ่มเครื่องจักรแล้วบันทึกงานซ่อมบำรุงครั้งแรกได้เลย</p>
+          </div>` : `
+        <table>
+          <thead><tr><th>วันที่</th><th>เครื่องจักร</th><th>ประเภทงาน</th><th>ผู้ดำเนินการ</th><th>รอบถัดไป</th></tr></thead>
+          <tbody>
+            ${recent.map(r => {
+              const m = state.machines.find(x=>x.id===r.machineId);
+              return `<tr class="row-click" onclick="viewMachine('${r.machineId}')">
+                <td class="mono">${fmtDate(r.date)}</td>
+                <td>${esc(m ? m.name : 'ไม่ทราบเครื่องจักร')}</td>
+                <td>${esc(r.type)}</td>
+                <td>${esc(r.technician)}</td>
+                <td class="mono">${fmtDate(r.nextDueDate)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`}
+      </div>
+
+      <div class="panel-card">
+        <h3>ความพร้อมใช้งานของเครื่องจักร</h3>
+        <div class="gauge-wrap">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="${r}" fill="none" stroke="#ece6d4" stroke-width="12"/>
+            <circle cx="70" cy="70" r="${r}" fill="none" stroke="${gaugeColor}" stroke-width="12"
+              stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+              transform="rotate(-90 70 70)"/>
+            <text x="70" y="66" text-anchor="middle" font-family="Space Grotesk" font-size="26" font-weight="700" fill="#1c2027">${healthPct}%</text>
+            <text x="70" y="86" text-anchor="middle" font-family="Inter" font-size="9" fill="#8a8267">อยู่ในเกณฑ์ปกติ</text>
+          </svg>
+          <div class="gauge-legend">
+            <span><span class="dot" style="background:#2f7a53"></span>ปกติ (${ok})</span>
+            <span><span class="dot" style="background:#b7841f"></span>ใกล้ครบกำหนด (${duesoon})</span>
+            <span><span class="dot" style="background:#b3402a"></span>เกินกำหนด (${overdue})</span>
+            ${none ? `<span><span class="dot" style="background:#7d765f"></span>ไม่มีประวัติ (${none})</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ================= MACHINES LIST =================
+function renderMachines(){
+  const term = state.searchTerm.trim().toLowerCase();
+  const list = state.machines.filter(m =>
+    !term || m.name.toLowerCase().includes(term) || m.code.toLowerCase().includes(term) || m.location.toLowerCase().includes(term)
+  );
+  return `
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">ทะเบียนเครื่องจักร</div>
+        <h1>เครื่องจักรทั้งหมด</h1>
+        <div class="sub">${state.machines.length} รายการในระบบ</div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('add-machine')">${ICONS.plus} เพิ่มเครื่องจักรใหม่</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        ${ICONS.search}
+        <input type="text" placeholder="ค้นหาด้วยชื่อ, รหัส หรือตำแหน่ง..." value="${esc(state.searchTerm)}" oninput="state.searchTerm=this.value; render();">
+      </div>
+    </div>
+
+    <div class="panel-card" style="padding:0;overflow:hidden;">
+      ${list.length === 0 ? `
+        <div class="empty-state">
+          <div class="ico">${ICONS.empty}</div>
+          <h4>${state.machines.length===0 ? 'ยังไม่มีเครื่องจักรในระบบ' : 'ไม่พบเครื่องจักรที่ค้นหา'}</h4>
+          <p>${state.machines.length===0 ? 'เริ่มต้นด้วยการเพิ่มเครื่องจักรเครื่องแรก' : 'ลองค้นหาด้วยคำอื่น'}</p>
+          ${state.machines.length===0 ? `<button class="btn btn-primary btn-sm" onclick="openModal('add-machine')">เพิ่มเครื่องจักรใหม่</button>` : ''}
+        </div>` : `
+      <table>
+        <thead>
+          <tr><th style="padding-left:1.4rem;">รหัส</th><th>ชื่อเครื่องจักร</th><th>ตำแหน่ง</th><th>ไลน์การผลิต</th><th>ประเภท</th><th>สถานะ</th><th>รอบถัดไป</th></tr>
+        </thead>
+        <tbody>
+          ${list.map(m => {
+            const s = machineStatus(m.id);
+            return `<tr class="row-click" onclick="viewMachine('${m.id}')">
+              <td class="mono" style="padding-left:1.4rem;">${esc(m.code)}</td>
+              <td style="font-weight:600;">${esc(m.name)}</td>
+              <td>${esc(m.location)}</td>
+              <td>${m.line ? esc(m.line) : '<span style="color:#b0a888;">—</span>'}</td>
+              <td>${esc(m.category)}</td>
+              <td>${badgeHtml(s)}</td>
+              <td class="mono">${fmtDate(machineRecords(m.id)[0]?.nextDueDate)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+}
+
+// ================= PRODUCTION LINES =================
+function groupMachinesByLine(){
+  const groups = {};
+  state.machines.forEach(m => {
+    const key = (m.line && m.line.trim()) ? m.line.trim() : 'ไม่ระบุไลน์';
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  });
+  return groups;
+}
+function lineStatusCounts(list){
+  let overdue=0, duesoon=0, ok=0, none=0;
+  list.forEach(m => {
+    const s = machineStatus(m.id);
+    if(s.cls==='overdue') overdue++;
+    else if(s.cls==='duesoon') duesoon++;
+    else if(s.cls==='ok') ok++;
+    else none++;
+  });
+  return {overdue, duesoon, ok, none};
+}
+
+function renderLinesOverview(){
+  const groups = groupMachinesByLine();
+  const lineNames = Object.keys(groups).sort((a,b) => {
+    if(a==='ไม่ระบุไลน์') return 1;
+    if(b==='ไม่ระบุไลน์') return -1;
+    return a.localeCompare(b, 'th');
+  });
+  const overall = lineStatusCounts(state.machines);
+
+  return `
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">แยกตามสายการผลิต</div>
+        <h1>ไลน์การผลิต</h1>
+        <div class="sub">${lineNames.length} ไลน์ · ${state.machines.length} เครื่องจักรทั้งหมด</div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('add-machine')">${ICONS.plus} เพิ่มเครื่องจักรใหม่</button>
+    </div>
+
+    <div class="panel-card" style="margin-bottom:1.4rem;">
+      <h3>ภาพรวมทุกไลน์</h3>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat-card"><div class="lbl">เครื่องจักรทั้งหมด</div><div class="val">${state.machines.length}</div></div>
+        <div class="stat-card ok"><div class="lbl">ปกติ</div><div class="val">${overall.ok}</div></div>
+        <div class="stat-card amber"><div class="lbl">ใกล้ครบกำหนด</div><div class="val">${overall.duesoon}</div></div>
+        <div class="stat-card warn"><div class="lbl">เกินกำหนด</div><div class="val">${overall.overdue}</div></div>
+      </div>
+    </div>
+
+    <div class="line-grid">
+      ${lineNames.map(name => {
+        const list = groups[name];
+        const c = lineStatusCounts(list);
+        const pct = list.length ? Math.round((c.ok/list.length)*100) : 0;
+        const barColor = c.overdue>0 ? 'var(--warn)' : c.duesoon>0 ? '#b7841f' : '#2f7a53';
+        const safeName = name.replace(/'/g, "\\'");
+        return `
+        <div class="line-card" onclick="viewLine('${safeName}')">
+          <div class="line-card-head">
+            <div class="line-card-name">${ICONS.layers} ${esc(name)}</div>
+            <div class="line-card-count">${list.length} เครื่อง</div>
+          </div>
+          <div class="line-bar"><div class="line-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+          <div class="line-card-badges">
+            ${c.ok ? `<span class="badge badge-ok"><span class="dot" style="background:currentColor"></span>ปกติ ${c.ok}</span>` : ''}
+            ${c.duesoon ? `<span class="badge badge-duesoon"><span class="dot" style="background:currentColor"></span>ใกล้ครบ ${c.duesoon}</span>` : ''}
+            ${c.overdue ? `<span class="badge badge-overdue"><span class="dot" style="background:currentColor"></span>เกินกำหนด ${c.overdue}</span>` : ''}
+            ${c.none ? `<span class="badge badge-none"><span class="dot" style="background:currentColor"></span>ไม่มีประวัติ ${c.none}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function viewLine(lineName){
+  state.selectedLine = lineName;
+  state.appView = 'lineDetail';
+  state.searchTerm = '';
+  render();
+}
+
+function renderLineDetail(){
+  const lineName = state.selectedLine;
+  const list = state.machines.filter(m => {
+    const key = (m.line && m.line.trim()) ? m.line.trim() : 'ไม่ระบุไลน์';
+    return key === lineName;
+  });
+  const term = state.searchTerm.trim().toLowerCase();
+  const filtered = list.filter(m =>
+    !term || m.name.toLowerCase().includes(term) || m.code.toLowerCase().includes(term) || m.location.toLowerCase().includes(term)
+  );
+  const c = lineStatusCounts(list);
+
+  return `
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:1.1rem;" onclick="goto('lines')">${ICONS.back} กลับไปหน้าไลน์การผลิตทั้งหมด</button>
+
+    <div class="topbar">
+      <div>
+        <div class="eyebrow mono">ไลน์การผลิต</div>
+        <h1>${esc(lineName)}</h1>
+        <div class="sub">${list.length} เครื่องจักรในไลน์นี้</div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('add-machine')">${ICONS.plus} เพิ่มเครื่องจักรใหม่</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="lbl">เครื่องจักรในไลน์นี้</div><div class="val">${list.length}</div></div>
+      <div class="stat-card ok"><div class="lbl">ปกติ</div><div class="val">${c.ok}</div></div>
+      <div class="stat-card amber"><div class="lbl">ใกล้ครบกำหนด</div><div class="val">${c.duesoon}</div></div>
+      <div class="stat-card warn"><div class="lbl">เกินกำหนด</div><div class="val">${c.overdue}</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        ${ICONS.search}
+        <input type="text" placeholder="ค้นหาในไลน์นี้..." value="${esc(state.searchTerm)}" oninput="state.searchTerm=this.value; render();">
+      </div>
+    </div>
+
+    <div class="panel-card" style="padding:0;overflow:hidden;">
+      ${filtered.length === 0 ? `
+        <div class="empty-state">
+          <div class="ico">${ICONS.empty}</div>
+          <h4>${list.length===0 ? 'ยังไม่มีเครื่องจักรในไลน์นี้' : 'ไม่พบเครื่องจักรที่ค้นหา'}</h4>
+        </div>` : `
+      <table>
+        <thead>
+          <tr><th style="padding-left:1.4rem;">รหัส</th><th>ชื่อเครื่องจักร</th><th>ตำแหน่ง</th><th>ประเภท</th><th>สถานะ</th><th>รอบถัดไป</th></tr>
+        </thead>
+        <tbody>
+          ${filtered.map(m => {
+            const s = machineStatus(m.id);
+            return `<tr class="row-click" onclick="viewMachine('${m.id}')">
+              <td class="mono" style="padding-left:1.4rem;">${esc(m.code)}</td>
+              <td style="font-weight:600;">${esc(m.name)}</td>
+              <td>${esc(m.location)}</td>
+              <td>${esc(m.category)}</td>
+              <td>${badgeHtml(s)}</td>
+              <td class="mono">${fmtDate(machineRecords(m.id)[0]?.nextDueDate)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+}
+
+function viewMachine(id){
+  state.selectedMachineId = id;
+  state.appView = 'detail';
+  render();
+}
+
+// ================= MACHINE DETAIL =================
+function renderDetail(){
+  const m = state.machines.find(x=>x.id===state.selectedMachineId);
+  if(!m){
+    return `<div class="empty-state"><h4>ไม่พบเครื่องจักรนี้</h4><button class="btn btn-ghost btn-sm" onclick="goto('machines')">กลับไปหน้ารายการ</button></div>`;
   }
-  const k = stats.kpi;
-  const availColor = metricColor(k.availabilityPct, 95, 85);
-  const pmColor = metricColor(k.pmRatioPct, 60, 40);
-  const onTimeColor = metricColor(k.onTimeRatePct, 90, 70);
-  const emergColor = metricColor(k.emergencyRatePct, 10, 25, true);
-  const overdueColor = metricColor(k.overdueRatePct, 5, 15, true);
+  const s = machineStatus(m.id);
+  const recs = machineRecords(m.id);
 
-  return (
-    <div>
-      <div className="page-head">
-        <div>
-          <div className="page-title">ตัวชี้วัดประสิทธิภาพ</div>
-          <div className="page-desc">คำนวณจากข้อมูล {stats.count} รายการ ครอบคลุมช่วงเวลา {k.periodDays} วัน</div>
-        </div>
+  return `
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:1.1rem;" onclick="goto('machines')">${ICONS.back} กลับไปหน้ารายการเครื่องจักร</button>
+
+    <div class="detail-head">
+      <div>
+        <div class="eyebrow mono">${esc(m.code)}</div>
+        <h1 style="margin:0 0 .3rem;">${esc(m.name)}</h1>
+        ${badgeHtml(s)}
       </div>
-
-      <div className="metric-grid">
-        <MetricCard label="อัตราความพร้อมใช้งาน (Availability)" valueText={`${k.availabilityPct.toFixed(1)}%`} pct={k.availabilityPct} color={availColor}
-          desc="สัดส่วนเวลาที่เครื่องจักรพร้อมทำงาน เทียบกับเวลาหยุดเครื่องรวมจากการซ่อมบำรุงทั้งหมด" />
-        <MetricCard label="สัดส่วนงานป้องกันเชิงรุก (PM Ratio)" valueText={`${k.pmRatioPct.toFixed(1)}%`} pct={k.pmRatioPct} color={pmColor}
-          desc="สัดส่วนงานซ่อมบำรุงเชิงป้องกัน เทียบกับงานซ่อมทั้งหมด ยิ่งสูงยิ่งแสดงถึงการวางแผนที่ดี" />
-        <MetricCard label="อัตราซ่อมสำเร็จ (Completion Rate)" valueText={`${k.onTimeRatePct.toFixed(1)}%`} pct={k.onTimeRatePct} color={onTimeColor}
-          desc="สัดส่วนงานที่ดำเนินการเสร็จสิ้น เทียบกับงานทั้งหมดที่บันทึกไว้" />
-        <MetricCard label="อัตราซ่อมฉุกเฉิน (Emergency Rate)" valueText={`${k.emergencyRatePct.toFixed(1)}%`} pct={k.emergencyRatePct} color={emergColor}
-          desc="สัดส่วนงานซ่อมฉุกเฉินที่ไม่ได้วางแผนล่วงหน้า ยิ่งต่ำยิ่งดี" />
-        <MetricCard label="อัตรางานเกินกำหนด (Overdue Rate)" valueText={`${k.overdueRatePct.toFixed(1)}%`} pct={k.overdueRatePct} color={overdueColor}
-          desc="สัดส่วนงานที่เลยกำหนดดำเนินการ ควรควบคุมให้อยู่ในระดับต่ำที่สุด" />
-      </div>
-
-      <div className="metric-num-grid">
-        <KPI label="MTTR — เวลาซ่อมเฉลี่ย" value={`${k.mttrHours.toFixed(1)} ชม./ครั้ง`} sub="เวลาหยุดเครื่องเฉลี่ยต่องานซ่อม 1 ครั้ง" />
-        <KPI label="MTBF — ระยะห่างการเสียเฉลี่ย" value={k.mtbfDays !== null ? `${k.mtbfDays.toFixed(0)} วัน` : "ข้อมูลไม่พอ"} sub="ระยะเวลาเฉลี่ยระหว่างการเสียแต่ละครั้งต่ออุปกรณ์" />
-        <KPI label="ต้นทุนเฉลี่ยต่องาน" value={fmtTHB(k.avgCostPerJob)} sub="ค่าใช้จ่ายเฉลี่ยต่องานซ่อมบำรุง 1 ครั้ง" />
+      <div style="display:flex;gap:.6rem;">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('edit-machine','${m.id}')">แก้ไขข้อมูล</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('add-maintenance','${m.id}')">${ICONS.plus} บันทึกงานซ่อมบำรุง</button>
       </div>
     </div>
-  );
-}
 
-function ScheduleForm({ initial, equipmentOptions, onCancel, onSave }) {
-  const [form, setForm] = useState(() => ({
-    id: (initial && initial.id) || null,
-    equipment: (initial && initial.equipment) || "",
-    nextDate: (initial && initial.nextDate) || todayISO(),
-    intervalDays: initial && initial.intervalDays !== undefined && initial.intervalDays !== null ? initial.intervalDays : "",
-    note: (initial && initial.note) || "",
-  }));
-  const [error, setError] = useState("");
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
-  const submit = (e) => {
-    e.preventDefault();
-    if (!form.equipment.trim() || !form.nextDate) {
-      setError("กรุณาระบุชื่ออุปกรณ์และวันครบกำหนด");
-      return;
-    }
-    onSave({ ...form, intervalDays: form.intervalDays === "" ? null : Number(form.intervalDays) });
-  };
-
-  return (
-    <form className="panel" onSubmit={submit}>
-      <div className="form-grid">
-        <div className="field full">
-          <label>ชื่ออุปกรณ์ / เครื่องจักร</label>
-          <input className="input" list="equip-options" value={form.equipment} onChange={(e) => set("equipment", e.target.value)} placeholder="เลือกหรือพิมพ์ชื่ออุปกรณ์" />
-          <datalist id="equip-options">
-            {equipmentOptions.map((name) => <option key={name} value={name} />)}
-          </datalist>
-        </div>
-        <div className="field">
-          <label>วันครบกำหนดถัดไป</label>
-          <input className="input" type="date" value={form.nextDate} onChange={(e) => set("nextDate", e.target.value)} />
-        </div>
-        <div className="field">
-          <label>รอบซ้ำ (วัน) — เว้นว่างถ้าไม่ซ้ำ</label>
-          <input className="input" type="number" min="1" value={form.intervalDays} onChange={(e) => set("intervalDays", e.target.value)} placeholder="เช่น 30" />
-        </div>
-        <div className="field full">
-          <label>รายละเอียดการแจ้งเตือน</label>
-          <textarea className="input" value={form.note} onChange={(e) => set("note", e.target.value)} placeholder="สิ่งที่ต้องตรวจสอบหรือดำเนินการ" />
-        </div>
-      </div>
-      {error && <div style={{ color: COLORS.red, fontSize: 12.5, marginTop: 12 }}>{error}</div>}
-      <div className="form-actions">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>ยกเลิก</button>
-        <button type="submit" className="btn">บันทึกการแจ้งเตือน</button>
-      </div>
-    </form>
-  );
-}
-
-function AlertsPage({ alerts, records, onCompleteSchedule, onDeleteSchedule, onSaveSchedule, onGoToRecord }) {
-  const [showForm, setShowForm] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState(null);
-
-  if (!alerts) return <div className="loading-wrap">กำลังโหลดข้อมูล…</div>;
-
-  const equipmentOptions = Array.from(new Set((records || []).map((r) => r.equipment)));
-  const totalAlerts = alerts.overdueRecords.length + alerts.overdueSchedules.length + alerts.dueSoonSchedules.length;
-
-  const openNew = () => { setEditingSchedule({}); setShowForm(true); };
-  const openEdit = (s) => { setEditingSchedule(s); setShowForm(true); };
-  const closeForm = () => { setShowForm(false); setEditingSchedule(null); };
-  const handleSave = (sc) => { onSaveSchedule(sc); closeForm(); };
-
-  return (
-    <div>
-      <div className="page-head">
-        <div>
-          <div className="page-title">แจ้งเตือนซ่อมบำรุง</div>
-          <div className="page-desc">{totalAlerts > 0 ? `มี ${totalAlerts} รายการที่ต้องติดตาม` : "ไม่มีรายการที่ต้องติดตามด่วนในขณะนี้"}</div>
-        </div>
-        {!showForm && <button className="btn" onClick={openNew}>+ ตั้งการแจ้งเตือนใหม่</button>}
-      </div>
-
-      {showForm && (
-        <ScheduleForm initial={editingSchedule} equipmentOptions={equipmentOptions} onCancel={closeForm} onSave={handleSave} />
-      )}
-
-      <div className="alert-section-title">งานซ่อมที่เกินกำหนด</div>
-      {alerts.overdueRecords.length === 0 ? (
-        <div className="alert-empty">ไม่มีงานซ่อมที่เกินกำหนดในขณะนี้</div>
-      ) : (
-        <div className="alert-list">
-          {alerts.overdueRecords.map((r) => (
-            <div key={r.id} className="alert-item">
-              <div className="alert-main">
-                <div className="alert-title">{r.equipment}</div>
-                <div className="alert-sub">{r.note || TYPE_META[r.type].label} · ช่าง {r.technician}</div>
-              </div>
-              <div className="alert-days mono" style={{ color: COLORS.red }}>{fmtDateTH(r.date)}</div>
-              <button className="icon-btn" onClick={() => onGoToRecord(r)}>เปิดดู</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="alert-section-title">ครบกำหนดแล้ว (จากรอบแจ้งเตือน)</div>
-      {alerts.overdueSchedules.length === 0 ? (
-        <div className="alert-empty">ไม่มีรอบแจ้งเตือนที่เลยกำหนด</div>
-      ) : (
-        <div className="alert-list">
-          {alerts.overdueSchedules.map((s) => (
-            <div key={s.id} className="alert-item">
-              <div className="alert-main">
-                <div className="alert-title">{s.equipment}</div>
-                <div className="alert-sub">{s.note || "ถึงรอบตรวจสอบ/ซ่อมบำรุง"}</div>
-              </div>
-              <div className="alert-days mono" style={{ color: COLORS.red }}>เลยกำหนด {Math.abs(s.daysLeft)} วัน</div>
-              <div className="row-actions" style={{ opacity: 1 }}>
-                <button className="icon-btn" onClick={() => onCompleteSchedule(s)}>เสร็จแล้ว</button>
-                <button className="icon-btn" onClick={() => openEdit(s)}>แก้ไข</button>
-                <button className="icon-btn" onClick={() => onDeleteSchedule(s.id)}>ลบ</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="alert-section-title">ใกล้ถึงกำหนด (ภายใน 7 วัน)</div>
-      {alerts.dueSoonSchedules.length === 0 ? (
-        <div className="alert-empty">ไม่มีรอบแจ้งเตือนที่ใกล้ถึงกำหนด</div>
-      ) : (
-        <div className="alert-list">
-          {alerts.dueSoonSchedules.map((s) => (
-            <div key={s.id} className="alert-item warn">
-              <div className="alert-main">
-                <div className="alert-title">{s.equipment}</div>
-                <div className="alert-sub">{s.note || "ถึงรอบตรวจสอบ/ซ่อมบำรุง"}</div>
-              </div>
-              <div className="alert-days mono" style={{ color: COLORS.amber }}>{s.daysLeft === 0 ? "วันนี้" : `อีก ${s.daysLeft} วัน`}</div>
-              <div className="row-actions" style={{ opacity: 1 }}>
-                <button className="icon-btn" onClick={() => onCompleteSchedule(s)}>เสร็จแล้ว</button>
-                <button className="icon-btn" onClick={() => openEdit(s)}>แก้ไข</button>
-                <button className="icon-btn" onClick={() => onDeleteSchedule(s.id)}>ลบ</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="alert-section-title">กำหนดการถัดไป</div>
-      {alerts.upcomingSchedules.length === 0 ? (
-        <div className="alert-empty">ยังไม่มีรอบแจ้งเตือนอื่นที่ตั้งไว้</div>
-      ) : (
-        <div className="alert-list">
-          {alerts.upcomingSchedules.map((s) => (
-            <div key={s.id} className="alert-item ok">
-              <div className="alert-main">
-                <div className="alert-title">{s.equipment}</div>
-                <div className="alert-sub">{s.note || "ถึงรอบตรวจสอบ/ซ่อมบำรุง"}</div>
-              </div>
-              <div className="alert-days mono" style={{ color: COLORS.teal }}>{fmtDateTH(s.nextDate)}</div>
-              <div className="row-actions" style={{ opacity: 1 }}>
-                <button className="icon-btn" onClick={() => openEdit(s)}>แก้ไข</button>
-                <button className="icon-btn" onClick={() => onDeleteSchedule(s.id)}>ลบ</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div class="machine-meta">
+      <div class="meta-item"><div class="k">ตำแหน่ง / แผนก</div><div class="v">${esc(m.location)}</div></div>
+      <div class="meta-item"><div class="k">ไลน์การผลิต</div><div class="v">${m.line ? esc(m.line) : '—'}</div></div>
+      <div class="meta-item"><div class="k">ประเภทเครื่องจักร</div><div class="v">${esc(m.category)}</div></div>
+      <div class="meta-item"><div class="k">วันที่ติดตั้ง</div><div class="v">${fmtDate(m.installDate)}</div></div>
     </div>
-  );
-}
 
-function Records({ filtered, query, setQuery, filterType, setFilterType, filterStatus, setFilterStatus, onEdit, onDelete, onNew, total }) {
-  return (
-    <div>
-      <div className="page-head">
-        <div>
-          <div className="page-title">รายการซ่อมบำรุง</div>
-          <div className="page-desc">ทั้งหมด {total} รายการ · แสดง {filtered.length} รายการ</div>
-        </div>
-        <button className="btn" onClick={onNew}>+ บันทึกรายการใหม่</button>
-      </div>
-
-      <div className="toolbar">
-        <input className="input search" placeholder="ค้นหาอุปกรณ์, ช่าง, รายละเอียด…" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <select className="input" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-          <option value="all">ทุกประเภท</option>
-          {Object.entries(TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <select className="input" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="all">ทุกสถานะ</option>
-          {Object.entries(STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="empty">
-          <div className="headline">ไม่พบรายการ</div>
-          <div>ลองปรับคำค้นหาหรือตัวกรองใหม่</div>
-        </div>
-      ) : (
-        <div className="panel" style={{ padding: 0, overflowX: "auto" }}>
-          <table>
-            <thead>
-              <tr>
-                <th>อุปกรณ์</th><th>ประเภท</th><th>วันที่</th><th>ช่างซ่อม</th>
-                <th>ค่าใช้จ่าย</th><th>หยุดเครื่อง</th><th>ความสำคัญ</th><th>สถานะ</th><th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <div className="equip-name">{r.equipment}</div>
-                    {r.note && <div className="equip-note">{r.note}</div>}
-                  </td>
-                  <td><Tag meta={TYPE_META[r.type]} /></td>
-                  <td className="mono">{r.date}</td>
-                  <td>{r.technician}</td>
-                  <td className="mono">{fmtTHB(r.cost)}</td>
-                  <td className="mono">{Number(r.downtime).toFixed(1)} ชม.</td>
-                  <td><Tag meta={PRIORITY_META[r.priority]} /></td>
-                  <td><Tag meta={STATUS_META[r.status]} /></td>
-                  <td>
-                    <div className="row-actions">
-                      <button className="icon-btn" onClick={() => onEdit(r)}>แก้ไข</button>
-                      <button className="icon-btn" onClick={() => onDelete(r.id)}>ลบ</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <div class="panel-card">
+      <h3>ประวัติการซ่อมบำรุง (${recs.length} รายการ)</h3>
+      ${recs.length === 0 ? `
+        <div class="empty-state">
+          <div class="ico">${ICONS.wrench}</div>
+          <h4>ยังไม่มีประวัติการซ่อมบำรุง</h4>
+          <p>บันทึกงานซ่อมบำรุงครั้งแรกของเครื่องจักรนี้</p>
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-maintenance','${m.id}')">บันทึกงานซ่อมบำรุง</button>
+        </div>` : `
+      <div class="timeline">
+        ${recs.map(r => `
+          <div class="t-entry">
+            <div class="t-date">${fmtDate(r.date)}</div>
+            <div class="t-title">${esc(r.type)} — ${esc(r.technician)}</div>
+            <div class="t-desc">${esc(r.description)}</div>
+            <div class="t-tags">
+              <span>อะไหล่: ${esc(r.parts || '-')}</span>
+              <span>ค่าใช้จ่าย: ${fmtCost(r.cost)}</span>
+              <span>รอบถัดไป: ${fmtDate(r.nextDueDate)}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>`}
     </div>
-  );
+  `;
 }
 
-function RecordForm({ initial, onCancel, onSave }) {
-  const isEdit = !!(initial && initial.id);
-  const [form, setForm] = useState(() => ({
-    id: initial && initial.id || null,
-    equipment: (initial && initial.equipment) || "",
-    type: (initial && initial.type) || "preventive",
-    date: (initial && initial.date) || todayISO(),
-    technician: (initial && initial.technician) || "",
-    cost: initial && initial.cost !== undefined ? initial.cost : "",
-    downtime: initial && initial.downtime !== undefined ? initial.downtime : "",
-    priority: (initial && initial.priority) || "medium",
-    status: (initial && initial.status) || "completed",
-    note: (initial && initial.note) || "",
-  }));
-  const [error, setError] = useState("");
+// ================= MODALS =================
+function openModal(type, id){
+  state.modal = type;
+  state.editTargetId = id || null;
+  render();
+}
+function closeModal(){
+  state.modal = null;
+  state.editTargetId = null;
+  render();
+}
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+function renderModal(){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = (e) => { if(e.target === overlay) closeModal(); };
 
-  const submit = (e) => {
-    e.preventDefault();
-    if (!form.equipment.trim() || !form.technician.trim() || !form.date) {
-      setError("กรุณากรอกชื่ออุปกรณ์ ช่างซ่อม และวันที่ให้ครบถ้วน");
-      return;
-    }
-    onSave({ ...form, cost: Number(form.cost) || 0, downtime: Number(form.downtime) || 0 });
-  };
-
-  return (
-    <div>
-      <div className="page-head">
-        <div>
-          <div className="page-title">{isEdit ? "แก้ไขรายการซ่อมบำรุง" : "บันทึกรายการใหม่"}</div>
-          <div className="page-desc">กรอกรายละเอียดงานซ่อมบำรุงให้ครบถ้วนเพื่อให้ข้อมูลวิเคราะห์แม่นยำ</div>
-        </div>
+  let inner = '';
+  if(state.modal === 'add-machine' || state.modal === 'edit-machine'){
+    const editing = state.modal === 'edit-machine';
+    const m = editing ? state.machines.find(x=>x.id===state.editTargetId) : null;
+    inner = `
+      <div class="modal-head">
+        <h2>${editing ? 'แก้ไขข้อมูลเครื่องจักร' : 'เพิ่มเครื่องจักรใหม่'}</h2>
+        <button class="icon-btn" onclick="closeModal()">${ICONS.close}</button>
       </div>
-
-      <form className="panel" onSubmit={submit}>
-        <div className="form-grid">
-          <div className="field full">
-            <label>ชื่ออุปกรณ์ / เครื่องจักร</label>
-            <input className="input" value={form.equipment} onChange={(e) => set("equipment", e.target.value)} placeholder="เช่น คอมเพรสเซอร์ #1" />
-          </div>
-
-          <div className="field">
-            <label>ประเภทงาน</label>
-            <select className="input" value={form.type} onChange={(e) => set("type", e.target.value)}>
-              {Object.entries(TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>วันที่ดำเนินการ</label>
-            <input className="input" type="date" value={form.date} onChange={(e) => set("date", e.target.value)} />
-          </div>
-
-          <div className="field">
-            <label>ช่างผู้รับผิดชอบ</label>
-            <input className="input" value={form.technician} onChange={(e) => set("technician", e.target.value)} placeholder="ชื่อช่างซ่อม" />
-          </div>
-          <div className="field">
-            <label>ความสำคัญ</label>
-            <select className="input" value={form.priority} onChange={(e) => set("priority", e.target.value)}>
-              {Object.entries(PRIORITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-          </div>
-
-          <div className="field">
-            <label>ค่าใช้จ่าย (บาท)</label>
-            <input className="input" type="number" min="0" step="1" value={form.cost} onChange={(e) => set("cost", e.target.value)} placeholder="0" />
-          </div>
-          <div className="field">
-            <label>เวลาหยุดเครื่อง (ชั่วโมง)</label>
-            <input className="input" type="number" min="0" step="0.5" value={form.downtime} onChange={(e) => set("downtime", e.target.value)} placeholder="0" />
-          </div>
-
-          <div className="field">
-            <label>สถานะ</label>
-            <select className="input" value={form.status} onChange={(e) => set("status", e.target.value)}>
-              {Object.entries(STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-          </div>
-          <div />
-
-          <div className="field full">
-            <label>รายละเอียด / บันทึกเพิ่มเติม</label>
-            <textarea className="input" value={form.note} onChange={(e) => set("note", e.target.value)} placeholder="อาการ, อะไหล่ที่เปลี่ยน, หมายเหตุ…" />
-          </div>
+      <form onsubmit="return submitMachine(event, ${editing ? `'${m.id}'` : 'null'})">
+        <div class="field-row">
+          <div class="field"><label>รหัสเครื่องจักร</label><input type="text" id="mf-code" value="${esc(m?.code||'')}" required></div>
+          <div class="field"><label>ประเภทเครื่องจักร</label><input type="text" id="mf-category" value="${esc(m?.category||'')}" placeholder="เช่น เครื่องจักรกล" required></div>
         </div>
-
-        {error && <div style={{ color: COLORS.red, fontSize: 12.5, marginTop: 12 }}>{error}</div>}
-
-        <div className="form-actions">
-          <button type="button" className="btn btn-ghost" onClick={onCancel}>ยกเลิก</button>
-          <button type="submit" className="btn">{isEdit ? "บันทึกการแก้ไข" : "บันทึกรายการ"}</button>
+        <div class="field"><label>ชื่อเครื่องจักร</label><input type="text" id="mf-name" value="${esc(m?.name||'')}" required></div>
+        <div class="field"><label>ตำแหน่ง / แผนก</label><input type="text" id="mf-location" value="${esc(m?.location||'')}" required></div>
+        <div class="field"><label>ไลน์การผลิต <span style="font-weight:400;color:#8a8267;">(ถ้ามี)</span></label><input type="text" id="mf-line" value="${esc(m?.line||'')}" placeholder="เช่น ไลน์ผลิต 1"></div>
+        <div class="field"><label>วันที่ติดตั้ง</label><input type="date" id="mf-install" value="${esc(m?.installDate||'')}"></div>
+        <div class="field"><label>หมายเหตุ</label><textarea id="mf-notes" rows="2">${esc(m?.notes||'')}</textarea></div>
+        <div class="modal-actions">
+          ${editing ? `<button type="button" class="btn btn-danger btn-sm" onclick="deleteMachine('${m.id}')" style="margin-right:auto;">ลบเครื่องจักรนี้</button>` : ''}
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">${editing ? 'บันทึกการแก้ไข' : 'เพิ่มเครื่องจักร'}</button>
         </div>
       </form>
-    </div>
-  );
+    `;
+  } else if(state.modal === 'add-maintenance'){
+    const machineId = state.editTargetId;
+    const m = state.machines.find(x=>x.id===machineId);
+    inner = `
+      <div class="modal-head">
+        <h2>บันทึกงานซ่อมบำรุง</h2>
+        <button class="icon-btn" onclick="closeModal()">${ICONS.close}</button>
+      </div>
+      <p style="font-size:.85rem;color:#8a8267;margin:-.6rem 0 1.2rem;">สำหรับเครื่องจักร: <strong style="color:#1c2027;">${esc(m?.name||'')}</strong></p>
+      <form onsubmit="return submitMaintenance(event, '${machineId}')">
+        <div class="field-row">
+          <div class="field"><label>วันที่ดำเนินการ</label><input type="date" id="rf-date" value="${todayISO()}" required></div>
+          <div class="field">
+            <label>ประเภทงาน</label>
+            <select id="rf-type">
+              <option>บำรุงรักษาตามระยะ</option>
+              <option>ตรวจสอบตามระยะ</option>
+              <option>ซ่อมฉุกเฉิน</option>
+              <option>เปลี่ยนอะไหล่</option>
+              <option>อื่น ๆ</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>ผู้ดำเนินการ</label><input type="text" id="rf-tech" required placeholder="ชื่อช่างหรือทีมงาน"></div>
+        <div class="field"><label>รายละเอียดงาน</label><textarea id="rf-desc" rows="2" required placeholder="อธิบายงานที่ทำ"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label>อะไหล่ที่ใช้</label><input type="text" id="rf-parts" placeholder="ระบุ - หากไม่มี"></div>
+          <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input type="number" id="rf-cost" min="0" step="0.01" placeholder="0"></div>
+        </div>
+        <div class="field"><label>กำหนดบำรุงรักษาครั้งถัดไป</label><input type="date" id="rf-next"></div>
+        <div class="field"><label>หมายเหตุเพิ่มเติม</label><textarea id="rf-notes" rows="2"></textarea></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">บันทึกงานซ่อมบำรุง</button>
+        </div>
+      </form>
+    `;
+  }
+
+  overlay.innerHTML = `<div class="modal">${inner}</div>`;
+  document.getElementById('root').appendChild(overlay);
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
+function submitMachine(e, editingId){
+  e.preventDefault();
+  const data = {
+    code: document.getElementById('mf-code').value.trim(),
+    category: document.getElementById('mf-category').value.trim(),
+    name: document.getElementById('mf-name').value.trim(),
+    location: document.getElementById('mf-location').value.trim(),
+    line: document.getElementById('mf-line').value.trim(),
+    installDate: document.getElementById('mf-install').value,
+    notes: document.getElementById('mf-notes').value.trim()
+  };
+  if(editingId){
+    const m = state.machines.find(x=>x.id===editingId);
+    Object.assign(m, data);
+  } else {
+    state.machines.push({ id: uid(), ...data });
+  }
+  closeModal();
+  return false;
+}
+
+function deleteMachine(id){
+  state.machines = state.machines.filter(x=>x.id!==id);
+  state.maintenance = state.maintenance.filter(x=>x.machineId!==id);
+  state.modal = null;
+  state.appView = 'machines';
+  state.selectedMachineId = null;
+  render();
+}
+
+function submitMaintenance(e, machineId){
+  e.preventDefault();
+  const rec = {
+    id: uid(),
+    machineId,
+    date: document.getElementById('rf-date').value,
+    type: document.getElementById('rf-type').value,
+    technician: document.getElementById('rf-tech').value.trim(),
+    description: document.getElementById('rf-desc').value.trim(),
+    parts: document.getElementById('rf-parts').value.trim(),
+    cost: document.getElementById('rf-cost').value,
+    nextDueDate: document.getElementById('rf-next').value,
+    notes: document.getElementById('rf-notes').value.trim()
+  };
+  state.maintenance.push(rec);
+  closeModal();
+  return false;
+}
+
+// ---------- boot ----------
+render();
 </script>
 </body>
 </html>
