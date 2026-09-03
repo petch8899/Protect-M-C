@@ -59,6 +59,7 @@
 
   .main { flex: 1; padding: 30px 36px 60px; max-width: 1220px; }
   .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom: 22px; gap: 12px; flex-wrap: wrap; }
+  .page-head-actions { display:flex; gap: 10px; flex-wrap: wrap; }
   .page-title { font-family:'Kanit'; font-weight: 600; font-size: 25px; color: var(--hi); }
   .page-desc { color: var(--lo); font-size: 13px; margin-top: 4px; }
   .btn { font-family:'Noto Sans Thai'; font-weight: 600; font-size: 13.5px; padding: 10px 18px; background: var(--primary); color: #fff; border: none; cursor: pointer; border-radius: 9px; box-shadow: var(--shadow); transition: filter .12s, transform .05s; }
@@ -66,6 +67,8 @@
   .btn:active { transform: translateY(1px); }
   .btn-ghost { background: var(--surface); color: var(--hi); border: 1px solid var(--border); box-shadow: none; }
   .btn-ghost:hover { border-color: var(--lo); filter:none; background: var(--surface-alt); }
+  .btn:disabled, .btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:disabled:hover, .btn-ghost:disabled:hover { filter:none; background: var(--surface); border-color: var(--border); }
 
   .bracket { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; }
   .bk { display: none; }
@@ -170,6 +173,17 @@
     .row-actions { opacity: 1 !important; }
     .btn, .icon-btn { min-height: 38px; }
   }
+
+  @media print {
+    .no-print, .sidebar, .toolbar, .row-actions, .toast, .form-actions, .schedule-toggle { display: none !important; }
+    .app { display: block; background: #fff; }
+    .main { padding: 0; max-width: 100%; }
+    body { background: #fff; }
+    .panel, .metric-card, .bracket, .alert-item { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+    .page-head { margin-bottom: 14px; }
+    table { font-size: 11px; }
+    thead th { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style>
 </head>
 <body>
@@ -264,6 +278,37 @@ const NAV_ICONS = {
     </svg>
   ),
 };
+
+function csvEscape(val) {
+  const s = String(val === undefined || val === null ? "" : val);
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function downloadTextFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportRecordsCSV(records, scopeLabel) {
+  const headers = ["อุปกรณ์", "สายการผลิต", "ประเภทงาน", "วันที่", "ช่างซ่อม", "ค่าใช้จ่าย (บาท)", "เวลาหยุดเครื่อง (ชม.)", "ความสำคัญ", "สถานะ", "รายละเอียด"];
+  const rows = records.map((r) => [
+    r.equipment, r.line || "", TYPE_META[r.type] ? TYPE_META[r.type].label : r.type, r.date, r.technician,
+    r.cost, r.downtime, PRIORITY_META[r.priority] ? PRIORITY_META[r.priority].label : r.priority,
+    STATUS_META[r.status] ? STATUS_META[r.status].label : r.status, r.note || "",
+  ]);
+  const csv = "\uFEFF" + [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\r\n");
+  const datePart = todayISO();
+  const safeScope = (scopeLabel || "all").replace(/[^a-zA-Zก-๙0-9]+/g, "-");
+  downloadTextFile(`maintlog-${safeScope}-${datePart}.csv`, csv, "text/csv;charset=utf-8;");
+}
 
 function Bracket({ children, className = "" }) {
   return (
@@ -642,7 +687,10 @@ function Dashboard({ stats, lineStats, selectedLine, onSelectLine, onNew }) {
             {selectedLine === "all" ? `ภาพรวมทุกไลน์ · ${stats.count} รายการ` : `${selectedLine} · ${stats.count} รายการ`}
           </div>
         </div>
-        <button className="btn" onClick={onNew}>+ บันทึกรายการใหม่</button>
+        <div className="page-head-actions no-print">
+          <button className="btn btn-ghost" onClick={() => window.print()}>พิมพ์ / PDF</button>
+          <button className="btn" onClick={onNew}>+ บันทึกรายการใหม่</button>
+        </div>
       </div>
 
       <div className="kpi-grid">
@@ -806,6 +854,9 @@ function KpiPage({ stats, lineStats, selectedLine }) {
           <div className="page-desc">
             {selectedLine === "all" ? "ภาพรวมทุกไลน์" : selectedLine} · คำนวณจากข้อมูล {stats.count} รายการ ครอบคลุมช่วงเวลา {k.periodDays} วัน
           </div>
+        </div>
+        <div className="page-head-actions no-print">
+          <button className="btn btn-ghost" onClick={() => window.print()}>พิมพ์ / PDF</button>
         </div>
       </div>
 
@@ -1038,7 +1089,11 @@ function Records({ filtered, query, setQuery, filterType, setFilterType, filterS
             {selectedLine === "all" ? "ทุกไลน์" : selectedLine} · ทั้งหมด {total} รายการ · แสดง {filtered.length} รายการ
           </div>
         </div>
-        <button className="btn" onClick={onNew}>+ บันทึกรายการใหม่</button>
+        <div className="page-head-actions no-print">
+          <button className="btn btn-ghost" onClick={() => exportRecordsCSV(filtered, selectedLine)} disabled={filtered.length === 0}>ส่งออก CSV</button>
+          <button className="btn btn-ghost" onClick={() => window.print()}>พิมพ์ / PDF</button>
+          <button className="btn" onClick={onNew}>+ บันทึกรายการใหม่</button>
+        </div>
       </div>
 
       <div className="toolbar">
