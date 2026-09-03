@@ -75,8 +75,15 @@
 
   .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
   .kpi-label { color: var(--lo); font-size: 11.5px; margin-bottom: 9px; font-weight: 500; }
+  .kpi-top { display:flex; align-items:flex-start; justify-content:space-between; gap: 8px; }
+  .kpi-top .kpi-label { margin-bottom: 9px; }
   .kpi-value { font-family:'Kanit'; font-weight: 700; font-size: 27px; line-height:1; color: var(--hi); }
   .kpi-sub { color: var(--lo); font-size: 11.5px; margin-top: 7px; }
+
+  .formula-toggle { background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; white-space: nowrap; font-family: 'Noto Sans Thai'; }
+  .formula-toggle:hover { text-decoration: underline; }
+  .formula-toggle-inline { display: block; margin-top: 10px; }
+  .formula-box { margin-top: 10px; padding: 10px 12px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--hi); line-height: 1.7; white-space: pre-wrap; }
 
   .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 16px; }
   .panel-title { font-family:'Kanit'; font-weight: 600; font-size: 16px; margin-bottom: 2px; color: var(--hi); }
@@ -322,12 +329,21 @@ function Bracket({ children, className = "" }) {
 function Tag({ meta }) {
   return <span className="tag" style={{ color: meta.color, background: meta.color + "1A" }}>{meta.label}</span>;
 }
-function KPI({ label, value, sub, accent }) {
+function KPI({ label, value, sub, accent, formula }) {
+  const [showFormula, setShowFormula] = useState(false);
   return (
     <Bracket className="kpi">
-      <div className="kpi-label">{label}</div>
+      <div className="kpi-top">
+        <div className="kpi-label">{label}</div>
+        {formula && (
+          <button type="button" className="formula-toggle" onClick={() => setShowFormula((v) => !v)}>
+            {showFormula ? "ซ่อนสูตร" : "ดูสูตร"}
+          </button>
+        )}
+      </div>
       <div className="kpi-value" style={accent ? { color: accent } : undefined}>{value}</div>
       {sub && <div className="kpi-sub">{sub}</div>}
+      {formula && showFormula && <div className="formula-box">{formula}</div>}
     </Bracket>
   );
 }
@@ -547,7 +563,10 @@ function App() {
     });
     const mtbfDays = mtbfSamples.length ? mtbfSamples.reduce((a, b) => a + b, 0) / mtbfSamples.length : null;
 
-    const kpi = { pmRatioPct, emergencyRatePct, onTimeRatePct, overdueRatePct, mttrHours, avgCostPerJob, availabilityPct, mtbfDays, periodDays };
+    const kpi = {
+      pmRatioPct, emergencyRatePct, onTimeRatePct, overdueRatePct, mttrHours, avgCostPerJob, availabilityPct, mtbfDays, periodDays,
+      total, completed, preventiveCount, emergency, overdue, equipCount, totalPossibleHours, mtbfSampleCount: mtbfSamples.length,
+    };
 
     return { totalCost, totalDowntime, overdue, emergency, trend, byType, byEquip, byStatus, count: scopedRecords.length, kpi };
   }, [scopedRecords]);
@@ -815,7 +834,8 @@ function metricStatusLabel(color) {
   return "ต้องปรับปรุง";
 }
 
-function MetricCard({ label, valueText, pct, color, desc }) {
+function MetricCard({ label, valueText, pct, color, desc, formula }) {
+  const [showFormula, setShowFormula] = useState(false);
   return (
     <div className="metric-card">
       <div className="metric-top">
@@ -825,6 +845,12 @@ function MetricCard({ label, valueText, pct, color, desc }) {
       <div className="metric-value" style={{ color }}>{valueText}</div>
       <div className="progress-track"><div className="progress-fill" style={{ width: `${Math.max(2, Math.min(100, pct))}%`, background: color }} /></div>
       <div className="metric-desc">{desc}</div>
+      {formula && (
+        <button type="button" className="formula-toggle formula-toggle-inline" onClick={() => setShowFormula((v) => !v)}>
+          {showFormula ? "ซ่อนสูตรคำนวณ ▲" : "ดูสูตรคำนวณ ▼"}
+        </button>
+      )}
+      {formula && showFormula && <div className="formula-box">{formula}</div>}
     </div>
   );
 }
@@ -862,21 +888,53 @@ function KpiPage({ stats, lineStats, selectedLine }) {
 
       <div className="metric-grid">
         <MetricCard label="อัตราความพร้อมใช้งาน (Availability)" valueText={`${k.availabilityPct.toFixed(1)}%`} pct={k.availabilityPct} color={availColor}
-          desc="สัดส่วนเวลาที่เครื่องจักรพร้อมทำงาน เทียบกับเวลาหยุดเครื่องรวมจากการซ่อมบำรุงทั้งหมด" />
+          desc="สัดส่วนเวลาที่เครื่องจักรพร้อมทำงาน เทียบกับเวลาหยุดเครื่องรวมจากการซ่อมบำรุงทั้งหมด"
+          formula={`Availability % = ((เวลาพร้อมใช้งานทั้งหมด − เวลาหยุดเครื่องรวม) ÷ เวลาพร้อมใช้งานทั้งหมด) × 100
+
+เวลาพร้อมใช้งานทั้งหมด = ${k.periodDays} วัน × 24 ชม. × ${k.equipCount} อุปกรณ์ = ${k.totalPossibleHours.toFixed(0)} ชม.
+เวลาหยุดเครื่องรวม = ${stats.totalDowntime.toFixed(1)} ชม.
+
+= ((${k.totalPossibleHours.toFixed(0)} − ${stats.totalDowntime.toFixed(1)}) ÷ ${k.totalPossibleHours.toFixed(0)}) × 100
+= ${k.availabilityPct.toFixed(1)}%`} />
         <MetricCard label="สัดส่วนงานป้องกันเชิงรุก (PM Ratio)" valueText={`${k.pmRatioPct.toFixed(1)}%`} pct={k.pmRatioPct} color={pmColor}
-          desc="สัดส่วนงานซ่อมบำรุงเชิงป้องกัน เทียบกับงานซ่อมทั้งหมด ยิ่งสูงยิ่งแสดงถึงการวางแผนที่ดี" />
+          desc="สัดส่วนงานซ่อมบำรุงเชิงป้องกัน เทียบกับงานซ่อมทั้งหมด ยิ่งสูงยิ่งแสดงถึงการวางแผนที่ดี"
+          formula={`PM Ratio % = (จำนวนงานป้องกัน ÷ จำนวนงานทั้งหมด) × 100
+= (${k.preventiveCount} ÷ ${k.total}) × 100
+= ${k.pmRatioPct.toFixed(1)}%`} />
         <MetricCard label="อัตราซ่อมสำเร็จ (Completion Rate)" valueText={`${k.onTimeRatePct.toFixed(1)}%`} pct={k.onTimeRatePct} color={onTimeColor}
-          desc="สัดส่วนงานที่ดำเนินการเสร็จสิ้น เทียบกับงานทั้งหมดที่บันทึกไว้" />
+          desc="สัดส่วนงานที่ดำเนินการเสร็จสิ้น เทียบกับงานทั้งหมดที่บันทึกไว้"
+          formula={`Completion Rate % = (จำนวนงานที่เสร็จสิ้น ÷ จำนวนงานทั้งหมด) × 100
+= (${k.completed} ÷ ${k.total}) × 100
+= ${k.onTimeRatePct.toFixed(1)}%`} />
         <MetricCard label="อัตราซ่อมฉุกเฉิน (Emergency Rate)" valueText={`${k.emergencyRatePct.toFixed(1)}%`} pct={k.emergencyRatePct} color={emergColor}
-          desc="สัดส่วนงานซ่อมฉุกเฉินที่ไม่ได้วางแผนล่วงหน้า ยิ่งต่ำยิ่งดี" />
+          desc="สัดส่วนงานซ่อมฉุกเฉินที่ไม่ได้วางแผนล่วงหน้า ยิ่งต่ำยิ่งดี"
+          formula={`Emergency Rate % = (จำนวนงานฉุกเฉิน ÷ จำนวนงานทั้งหมด) × 100
+= (${k.emergency} ÷ ${k.total}) × 100
+= ${k.emergencyRatePct.toFixed(1)}%`} />
         <MetricCard label="อัตรางานเกินกำหนด (Overdue Rate)" valueText={`${k.overdueRatePct.toFixed(1)}%`} pct={k.overdueRatePct} color={overdueColor}
-          desc="สัดส่วนงานที่เลยกำหนดดำเนินการ ควรควบคุมให้อยู่ในระดับต่ำที่สุด" />
+          desc="สัดส่วนงานที่เลยกำหนดดำเนินการ ควรควบคุมให้อยู่ในระดับต่ำที่สุด"
+          formula={`Overdue Rate % = (จำนวนงานเกินกำหนด ÷ จำนวนงานทั้งหมด) × 100
+= (${k.overdue} ÷ ${k.total}) × 100
+= ${k.overdueRatePct.toFixed(1)}%`} />
       </div>
 
       <div className="metric-num-grid">
-        <KPI label="MTTR — เวลาซ่อมเฉลี่ย" value={`${k.mttrHours.toFixed(1)} ชม./ครั้ง`} sub="เวลาหยุดเครื่องเฉลี่ยต่องานซ่อม 1 ครั้ง" />
-        <KPI label="MTBF — ระยะห่างการเสียเฉลี่ย" value={k.mtbfDays !== null ? `${k.mtbfDays.toFixed(0)} วัน` : "ข้อมูลไม่พอ"} sub="ระยะเวลาเฉลี่ยระหว่างการเสียแต่ละครั้งต่ออุปกรณ์" />
-        <KPI label="ต้นทุนเฉลี่ยต่องาน" value={fmtTHB(k.avgCostPerJob)} sub="ค่าใช้จ่ายเฉลี่ยต่องานซ่อมบำรุง 1 ครั้ง" />
+        <KPI label="MTTR — เวลาซ่อมเฉลี่ย" value={`${k.mttrHours.toFixed(1)} ชม./ครั้ง`} sub="เวลาหยุดเครื่องเฉลี่ยต่องานซ่อม 1 ครั้ง"
+          formula={`MTTR = เวลาหยุดเครื่องรวม (ชม.) ÷ จำนวนงานทั้งหมด
+= ${stats.totalDowntime.toFixed(1)} ÷ ${k.total}
+= ${k.mttrHours.toFixed(2)} ชม./ครั้ง`} />
+        <KPI label="MTBF — ระยะห่างการเสียเฉลี่ย" value={k.mtbfDays !== null ? `${k.mtbfDays.toFixed(0)} วัน` : "ข้อมูลไม่พอ"} sub="ระยะเวลาเฉลี่ยระหว่างการเสียแต่ละครั้งต่ออุปกรณ์"
+          formula={k.mtbfDays !== null
+            ? `MTBF = ค่าเฉลี่ยของ (วันที่เสียครั้งถัดไป − วันที่เสียครั้งก่อนหน้า)
+เฉพาะงานแก้ไข/ฉุกเฉินของอุปกรณ์เดียวกันที่เสีย ≥ 2 ครั้ง
+
+= ค่าเฉลี่ยจาก ${k.mtbfSampleCount} ช่วงเวลาที่พบ
+= ${k.mtbfDays.toFixed(1)} วัน`
+            : `ต้องมีอุปกรณ์ที่มีงานแก้ไข/ฉุกเฉิน อย่างน้อย 2 ครั้ง จึงจะคำนวณระยะห่างการเสียได้`} />
+        <KPI label="ต้นทุนเฉลี่ยต่องาน" value={fmtTHB(k.avgCostPerJob)} sub="ค่าใช้จ่ายเฉลี่ยต่องานซ่อมบำรุง 1 ครั้ง"
+          formula={`ต้นทุนเฉลี่ยต่องาน = ค่าใช้จ่ายรวม ÷ จำนวนงานทั้งหมด
+= ${fmtTHB(stats.totalCost)} ÷ ${k.total}
+= ${fmtTHB(k.avgCostPerJob)}`} />
       </div>
 
       {showLineTable && (
